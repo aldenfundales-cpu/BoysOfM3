@@ -27,7 +27,7 @@ async function loadPublic(){
   const [z,m,e] = await Promise.all([
     sb.from('zones').select('name,location,leader').order('name'),
     sb.from('members').select('id,name,zone,bike,position,status').eq('status','verified').eq('public_visible',true).order('name'),
-    sb.from('events').select('id,name,event_date,location,type,description').order('event_date',{ascending:true,nullsFirst:false})
+    sb.from('events').select('id,title,event_date,event_time,location,description').order('event_date',{ascending:true,nullsFirst:false})
   ]);
   if(z.error || m.error || e.error){
     console.error(z.error||m.error||e.error);
@@ -57,7 +57,16 @@ function renderMembers(filter=''){
   $('memberGrid').innerHTML=list.map(m=>`<article class="card"><span class="tag">✓ VERIFIED</span><h3>${esc(m.name)}</h3><p><b>${esc(m.id)}</b></p><p>📍 ${esc(m.zone)}</p><p>🏍️ ${esc(m.bike)}</p><p>🎖️ ${esc(m.position)}</p></article>`).join('') || `<p class="muted">No verified members found.</p>`;
 }
 function renderEvents(){
-  $('eventGrid').innerHTML=publicEvents.map(e=>`<article class="card"><span class="tag">${esc(e.type||'EVENT')}</span><h3>${esc(e.name)}</h3><p>📅 ${formatDate(e.event_date)}</p><p>📍 ${esc(e.location||'TBA')}</p>${e.description?`<p>${esc(e.description)}</p>`:''}</article>`).join('') || `<p class="muted">No events yet.</p>`;
+  $('eventGrid').innerHTML=publicEvents.map(e=>`
+    <article class="card">
+      <span class="tag">EVENT</span>
+      <h3>${esc(e.title)}</h3>
+      <p>📅 ${formatDate(e.event_date)}</p>
+      <p>🕒 ${esc(e.event_time || 'TBA')}</p>
+      <p>📍 ${esc(e.location || 'TBA')}</p>
+      ${e.description ? `<p>${esc(e.description)}</p>` : ''}
+    </article>
+  `).join('') || `<p class="muted">No events yet.</p>`;
 }
 
 function resetMemberForm(){
