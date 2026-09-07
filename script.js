@@ -210,6 +210,7 @@ function renderAll(){
   /* AUTOMATICALLY LOAD EXISTING ZONES
      INTO MEMBER FORM DROPDOWN */
   populateMemberZoneDropdown();
+populateRequestZoneDropdown();
 
 
   if(selectedZone){
@@ -256,6 +257,35 @@ function populateMemberZoneDropdown(){
   if(
     currentValue &&
     zones.some(z => z.name === currentValue)
+  ){
+    select.value = currentValue;
+  }
+}
+
+/* =========================
+   REQUEST ZONE DROPDOWN
+========================= */
+
+function populateRequestZoneDropdown(){
+
+  const select = $('requestZone');
+
+  if(!select) return;
+
+  const currentValue = select.value;
+
+  select.innerHTML = `
+    <option value="">Select Zone</option>
+    ${publicZones.map(z => `
+      <option value="${esc(z.name)}">
+        ${esc(z.name)}
+      </option>
+    `).join('')}
+  `;
+
+  if(
+    currentValue &&
+    publicZones.some(z => z.name === currentValue)
   ){
     select.value = currentValue;
   }
@@ -1496,6 +1526,139 @@ if($('verifyInput')){
 }
 
 
+/* =========================
+   MEMBERSHIP REQUEST
+========================= */
+
+if($('requestForm')){
+
+  $('requestForm').onsubmit = async e => {
+
+    e.preventDefault();
+
+    if(!sb){
+
+      message(
+        'requestMessage',
+        'Database is not connected.',
+        'error'
+      );
+
+      return;
+    }
+
+
+    const memberId =
+      $('requestMemberId').value.trim();
+
+    const name =
+      $('requestName').value.trim();
+
+    const zone =
+      $('requestZone').value.trim();
+
+    const bike =
+      $('requestBike').value.trim() || 'Mio i 125';
+
+
+    if(!memberId || !name || !zone){
+
+      message(
+        'requestMessage',
+        'Please complete all required fields.',
+        'error'
+      );
+
+      return;
+    }
+
+
+    message(
+      'requestMessage',
+      'Submitting request...'
+    );
+
+
+    /* Check if member ID is already registered */
+
+    const {
+      data: existingMember,
+      error: memberCheckError
+    } =
+      await sb
+        .from('members')
+        .select('id')
+        .eq('id', memberId)
+        .maybeSingle();
+
+
+    if(memberCheckError){
+
+      message(
+        'requestMessage',
+        'Unable to check the member ID.',
+        'error'
+      );
+
+      return;
+    }
+
+
+    if(existingMember){
+
+      message(
+        'requestMessage',
+        'This Member ID is already registered.',
+        'error'
+      );
+
+      return;
+    }
+
+
+    /* Submit pending request */
+
+    const { error } =
+      await sb
+        .from('member_requests')
+        .insert({
+          member_id: memberId,
+          name: name,
+          zone: zone,
+          bike: bike,
+          status: 'pending'
+        });
+
+
+    if(error){
+
+      message(
+        'requestMessage',
+        error.message,
+        'error'
+      );
+
+      return;
+    }
+
+
+    message(
+      'requestMessage',
+      'Membership request submitted successfully. Please wait for administrator approval.',
+      'ok'
+    );
+
+
+    $('requestForm').reset();
+
+    $('requestBike').value =
+      'Mio i 125';
+
+    populateRequestZoneDropdown();
+
+  };
+
+}
 /* =========================
    ADMIN LOGIN
 ========================= */
