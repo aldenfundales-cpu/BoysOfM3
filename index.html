@@ -21,8 +21,9 @@
     <a href="#home">Home</a>
     <a href="#zones">Zones</a>
     <a href="#events">Events</a>
-    <a href="#verify">Verify</a>
-    <a href="#admin">Admin</a>
+   <a href="#verify">Verify</a>
+<a href="#join">Join</a>
+<a href="#admin">Admin</a>
   </nav>
 
 </header>
@@ -230,7 +231,60 @@
 
 </section>
 
+<!-- =========================
+     MEMBERSHIP REQUEST
+========================= -->
 
+<section id="join" class="section">
+
+  <p class="eyebrow">MEMBERSHIP REQUEST</p>
+
+  <h2>Submit Membership</h2>
+
+  <p class="muted">
+    Submit your information for verification.
+    Your request will be reviewed by a Boys of M3 administrator.
+  </p>
+
+  <form id="requestForm" class="panel">
+
+    <input
+      id="requestMemberId"
+      placeholder="Badge / Member ID"
+      required
+    >
+
+    <input
+      id="requestName"
+      placeholder="Full name"
+      required
+    >
+
+    <select id="requestZone" required>
+      <option value="">Select Zone</option>
+    </select>
+
+    <input
+      id="requestBike"
+      placeholder="Motorcycle"
+      value="Mio i 125"
+      required
+    >
+
+    <button class="btn">
+      Submit Request
+    </button>
+
+    <p
+      id="requestMessage"
+      class="form-message"
+      aria-live="polite"
+    ></p>
+
+  </form>
+
+</section>
+  
 <!-- =========================
      ADMIN
 ========================= -->
