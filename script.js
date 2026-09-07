@@ -447,6 +447,11 @@ function renderMembers(filter=''){
 
     ).toLowerCase().includes(f));
 
+  /* Sort members by badge number: lowest to highest */
+list.sort((a, b) => {
+  return Number(a.id) - Number(b.id);
+});
+
 
   grid.innerHTML=
     list.map(m=>`
