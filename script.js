@@ -232,36 +232,32 @@ function renderAll(){
 
 function populateMemberZoneDropdown(){
 
-  const select=$('memberZone');
+  const select = $('memberZone');
 
   if(!select) return;
 
+  const currentValue = select.value;
 
-  const currentValue=
-    select.value;
+  const zones =
+    adminZones && adminZones.length
+      ? adminZones
+      : publicZones;
 
+  select.innerHTML = `
+    <option value="">Select Zone</option>
 
-  select.innerHTML=`
-    <option value="">
-      Select Zone
-    </option>
-
-    ${publicZones.map(z=>`
+    ${zones.map(z => `
       <option value="${esc(z.name)}">
         ${esc(z.name)}
       </option>
     `).join('')}
   `;
 
-
   if(
     currentValue &&
-    publicZones.some(
-      z=>z.name===currentValue
-    )
+    zones.some(z => z.name === currentValue)
   ){
-
-    select.value=currentValue;
+    select.value = currentValue;
   }
 }
 
@@ -896,6 +892,8 @@ async function loadAdmin(){
   adminZones=
     z.data || [];
 
+
+  populateMemberZoneDropdown();
 
   renderAdminLists();
 }
