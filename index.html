@@ -41,10 +41,32 @@
   <div id="zoneGrid" class="grid"></div>
 </section>
 
-<section id="members" class="section dark">
-  <div class="section-head"><div><p class="eyebrow">VERIFIED</p><h2>Members</h2></div>
-  <input id="memberSearch" placeholder="Search verified member..." aria-label="Search members"></div>
+<section id="members" class="section dark" hidden>
+
+  <div class="members-heading">
+    <div>
+      <p class="eyebrow">VERIFIED</p>
+      <h2 id="membersTitle">Members</h2>
+    </div>
+
+    <button
+      type="button"
+      id="closeMembers"
+      class="close-members"
+      aria-label="Close members"
+    >
+      &times;
+    </button>
+  </div>
+
+  <input
+    id="memberSearch"
+    type="search"
+    placeholder="Search verified member..."
+  >
+
   <div id="memberGrid" class="grid"></div>
+
 </section>
 
 <section id="events" class="section">
