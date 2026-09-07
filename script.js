@@ -340,10 +340,16 @@ function renderZones(filter=''){
           </p>
 
           <p>
-            🛡️
-            <b>Admins:</b>
-            ${esc(z.admins || 'TBA')}
-          </p>
+  🛡️ <b>Admins:</b><br>
+  ${
+    z.admins && z.admins !== 'TBA'
+      ? z.admins
+          .split(',')
+          .map(admin => esc(admin.trim()))
+          .join('<br>')
+      : 'TBA'
+  }
+</p>
 
           <span class="tag">
             ${count} verified members
