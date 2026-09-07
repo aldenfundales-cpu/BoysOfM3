@@ -6,47 +6,143 @@
   <title>Boys of M3 | Official Community</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
 <header class="topbar">
-  <a class="brand" href="#home"><img src="bom3-logo.png" alt="Boys of M3 logo"></a>
+
+  <a class="brand" href="#home">
+    <img src="bom3-logo.png" alt="Boys of M3 logo">
+  </a>
+
   <button class="menu" id="menuBtn" aria-label="Open menu">☰</button>
+
   <nav id="nav">
-    <a href="#home">Home</a><a href="#zones">Zones</a><a href="#members">Members</a>
-    <a href="#events">Events</a><a href="#verify">Verify</a><a href="#admin">Admin</a>
+    <a href="#home">Home</a>
+    <a href="#zones">Zones</a>
+    <a href="#events">Events</a>
+    <a href="#verify">Verify</a>
+    <a href="#admin">Admin</a>
   </nav>
+
 </header>
 
+
 <main>
+
+<!-- =========================
+     HOME
+========================= -->
+
 <section id="home" class="hero">
-  <div class="hero-logo"><img src="bom3-logo.png" alt="Boys of M3 Tam Bikes"></div>
-  <div class="hero-copy">
-    <p class="eyebrow">ONE RIDE &nbsp; • &nbsp; ONE FAMILY &nbsp; • &nbsp; M3 NATIONWIDE</p>
-    <p class="lead">A community of Mio i 125 riders united by brotherhood, respect, and the passion for riding.</p>
-    <div class="actions"><a class="btn" href="#members">View Members</a><a class="btn ghost" href="#zones">Explore Zones</a></div>
+
+  <div class="hero-logo">
+    <img src="bom3-logo.png" alt="Boys of M3 Tam Bikes">
   </div>
-  <div class="hero-slogan">RIDE<br><span>TOGETHER</span><br>STAY UNITED</div>
+
+  <div class="hero-copy">
+
+    <p class="eyebrow">
+      ONE RIDE &nbsp; • &nbsp; ONE FAMILY &nbsp; • &nbsp; M3 NATIONWIDE
+    </p>
+
+    <p class="lead">
+      A community of Mio i 125 riders united by brotherhood,
+      respect, and the passion for riding.
+    </p>
+
+    <div class="actions">
+
+      <a class="btn" href="#zones">
+        View Members
+      </a>
+
+      <a class="btn ghost" href="#zones">
+        Explore Zones
+      </a>
+
+    </div>
+
+  </div>
+
+  <div class="hero-slogan">
+    RIDE<br>
+    <span>TOGETHER</span><br>
+    STAY UNITED
+  </div>
+
 </section>
+
 
 <div id="setupNotice" class="setup-notice" hidden></div>
 
+
+<!-- =========================
+     STATS
+========================= -->
+
 <section class="stats">
-  <div><b id="zoneCount">0</b><span>Zones</span></div>
-  <div><b id="memberCount">0</b><span>Verified Members</span></div>
-  <div><b id="eventCount">0</b><span>Upcoming Events</span></div>
+
+  <div>
+    <b id="zoneCount">0</b>
+    <span>Zones</span>
+  </div>
+
+  <div>
+    <b id="memberCount">0</b>
+    <span>Verified Members</span>
+  </div>
+
+  <div>
+    <b id="eventCount">0</b>
+    <span>Upcoming Events</span>
+  </div>
+
 </section>
 
+
+<!-- =========================
+     ZONE DIRECTORY
+========================= -->
+
 <section id="zones" class="section">
-  <div class="section-head"><div><p class="eyebrow">NATIONWIDE NETWORK</p><h2>Zone Directory</h2></div>
-  <input id="zoneSearch" placeholder="Search zone or location..." aria-label="Search zones"></div>
+
+  <div class="section-head">
+
+    <div>
+      <p class="eyebrow">NATIONWIDE NETWORK</p>
+      <h2>Zone Directory</h2>
+    </div>
+
+    <input
+      id="zoneSearch"
+      placeholder="Search zone or location..."
+      aria-label="Search zones"
+    >
+
+  </div>
+
   <div id="zoneGrid" class="grid"></div>
+
 </section>
+
+
+<!-- =========================
+     MEMBERS
+========================= -->
 
 <section id="members" class="section dark" hidden>
 
   <div class="members-heading">
+
     <div>
+
       <p class="eyebrow">VERIFIED</p>
-      <h2 id="membersTitle">Members</h2>
+
+      <h2 id="membersTitle">
+        Members
+      </h2>
+
     </div>
 
     <button
@@ -57,94 +153,482 @@
     >
       &times;
     </button>
+
   </div>
+
 
   <input
     id="memberSearch"
     type="search"
-    placeholder="Search verified member..."
+    placeholder="Search name, badge number or position..."
   >
+
 
   <div id="memberGrid" class="grid"></div>
 
 </section>
 
+
+<!-- =========================
+     EVENTS
+========================= -->
+
 <section id="events" class="section">
-  <p class="eyebrow">COMMUNITY ACTIVITIES</p><h2>Upcoming Events</h2>
+
+  <p class="eyebrow">
+    COMMUNITY ACTIVITIES
+  </p>
+
+  <h2>
+    Upcoming Events
+  </h2>
+
   <div id="eventGrid" class="grid"></div>
+
 </section>
+
+
+<!-- =========================
+     VERIFY MEMBER
+========================= -->
 
 <section id="verify" class="section verify">
-  <p class="eyebrow">MEMBER VERIFICATION</p><h2>Check a Member</h2>
-  <p>Enter the official BOM3 member ID supplied by the member.</p>
-  <div class="verify-box"><input id="verifyInput" placeholder="Example: BOM3-0001" autocomplete="off"><button class="btn" id="verifyBtn">Verify</button></div>
-  <div id="verifyResult" aria-live="polite"></div>
+
+  <p class="eyebrow">
+    MEMBER VERIFICATION
+  </p>
+
+  <h2>
+    Check a Member
+  </h2>
+
+  <p>
+    Enter the official BOM3 member ID supplied by the member.
+  </p>
+
+  <div class="verify-box">
+
+    <input
+      id="verifyInput"
+      placeholder="Example: 02898"
+      autocomplete="off"
+    >
+
+    <button
+      class="btn"
+      id="verifyBtn"
+    >
+      Verify
+    </button>
+
+  </div>
+
+  <div
+    id="verifyResult"
+    aria-live="polite"
+  ></div>
+
 </section>
+
+
+<!-- =========================
+     ADMIN
+========================= -->
 
 <section id="admin" class="section dark">
-  <p class="eyebrow">PRIVATE ADMIN AREA</p><h2>Admin Dashboard</h2>
-  <p class="muted">Member records are stored in the online database. Only authorized admin accounts can add, edit, or delete records.</p>
 
-  <div id="loginPanel" class="panel admin-auth">
-    <h3>Admin Login</h3>
-    <p class="muted">Use your authorized BOM3 administrator email and password.</p>
+  <p class="eyebrow">
+    PRIVATE ADMIN AREA
+  </p>
+
+  <h2>
+    Admin Dashboard
+  </h2>
+
+  <p class="muted">
+    Member records are stored in the online database.
+    Only authorized admin accounts can add, edit,
+    or delete records.
+  </p>
+
+
+  <!-- LOGIN -->
+
+  <div
+    id="loginPanel"
+    class="panel admin-auth"
+  >
+
+    <h3>
+      Admin Login
+    </h3>
+
+    <p class="muted">
+      Use your authorized BOM3 administrator email and password.
+    </p>
+
     <form id="loginForm">
-      <input id="loginEmail" type="email" placeholder="Admin email" autocomplete="username" required>
-      <input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password" required>
-      <button class="btn">Log In</button>
-      <p id="loginMessage" class="form-message" aria-live="polite"></p>
+
+      <input
+        id="loginEmail"
+        type="email"
+        placeholder="Admin email"
+        autocomplete="username"
+        required
+      >
+
+      <input
+        id="loginPassword"
+        type="password"
+        placeholder="Password"
+        autocomplete="current-password"
+        required
+      >
+
+      <button class="btn">
+        Log In
+      </button>
+
+      <p
+        id="loginMessage"
+        class="form-message"
+        aria-live="polite"
+      ></p>
+
     </form>
+
   </div>
+
+
+  <!-- DASHBOARD -->
 
   <div id="dashboard" hidden>
+
+
     <div class="admin-toolbar">
-      <div><strong id="adminEmail"></strong><span class="tag">ADMIN</span></div>
-      <button class="danger" id="logoutBtn">Log Out</button>
+
+      <div>
+
+        <strong id="adminEmail"></strong>
+
+        <span class="tag">
+          ADMIN
+        </span>
+
+      </div>
+
+      <button
+        class="danger"
+        id="logoutBtn"
+      >
+        Log Out
+      </button>
+
     </div>
+
 
     <div class="admin-grid">
-      <form id="memberForm" class="panel">
-        <h3 id="memberFormTitle">Add Verified Member</h3>
-        <input type="hidden" name="original_id" id="memberOriginalId">
-        <input name="id" id="memberId" placeholder="Member ID (BOM3-0001)" required>
-        <input name="name" id="memberName" placeholder="Full name" required>
-        <input name="zone" id="memberZone" placeholder="Zone" required>
-        <input name="bike" id="memberBike" placeholder="Motorcycle" value="Mio i 125">
-        <input name="position" id="memberPosition" placeholder="Position" value="Member">
-        <select name="status" id="memberStatus"><option value="verified">Verified / Active</option><option value="inactive">Inactive</option></select>
-        <label class="check"><input type="checkbox" name="public_visible" id="memberPublic" checked> Show this member in the public member directory</label>
-        <div class="form-actions"><button class="btn" id="memberSubmit">Save Member</button><button type="button" class="ghost-btn" id="memberCancel" hidden>Cancel Edit</button></div>
-        <p id="memberMessage" class="form-message" aria-live="polite"></p>
+
+
+      <!-- =========================
+           MEMBER FORM
+      ========================= -->
+
+      <form
+        id="memberForm"
+        class="panel"
+      >
+
+        <h3 id="memberFormTitle">
+          Add Verified Member
+        </h3>
+
+
+        <input
+          type="hidden"
+          name="original_id"
+          id="memberOriginalId"
+        >
+
+
+        <input
+          name="id"
+          id="memberId"
+          placeholder="Member ID / Badge Number"
+          required
+        >
+
+
+        <input
+          name="name"
+          id="memberName"
+          placeholder="Full name"
+          required
+        >
+
+
+        <!-- ZONE DROPDOWN -->
+
+        <select
+          name="zone"
+          id="memberZone"
+          required
+        >
+
+          <option value="">
+            Select Zone
+          </option>
+
+        </select>
+
+
+        <input
+          name="bike"
+          id="memberBike"
+          placeholder="Motorcycle"
+          value="Mio i 125"
+        >
+
+
+        <!-- POSITION DROPDOWN -->
+
+        <select
+          name="position"
+          id="memberPosition"
+          required
+        >
+
+          <option value="Member">
+            Member
+          </option>
+
+          <option value="Admin">
+            Admin
+          </option>
+
+          <option value="Vice Leader">
+            Vice Leader
+          </option>
+
+          <option value="Zone Leader">
+            Zone Leader
+          </option>
+
+        </select>
+
+
+        <!-- STATUS -->
+
+        <select
+          name="status"
+          id="memberStatus"
+        >
+
+          <option value="verified">
+            Verified / Active
+          </option>
+
+          <option value="inactive">
+            Inactive
+          </option>
+
+        </select>
+
+
+        <label class="check">
+
+          <input
+            type="checkbox"
+            name="public_visible"
+            id="memberPublic"
+            checked
+          >
+
+          Show this member in the public member directory
+
+        </label>
+
+
+        <div class="form-actions">
+
+          <button
+            class="btn"
+            id="memberSubmit"
+          >
+            Save Member
+          </button>
+
+          <button
+            type="button"
+            class="ghost-btn"
+            id="memberCancel"
+            hidden
+          >
+            Cancel Edit
+          </button>
+
+        </div>
+
+
+        <p
+          id="memberMessage"
+          class="form-message"
+          aria-live="polite"
+        ></p>
+
       </form>
 
-      <form id="zoneForm" class="panel">
-        <h3>Add / Edit Zone</h3>
-        <input type="hidden" name="original_name" id="zoneOriginalName">
-        <input name="name" id="zoneName" placeholder="Zone name" required>
-        <input name="location" id="zoneLocation" placeholder="City / Province" required>
-        <input name="leader" id="zoneLeader" placeholder="Zone Leader">
-        <input name="vice_leader" id="zoneViceLeader" placeholder="Vice Leader">
-        <input name="admins" id="zoneAdmins" placeholder="Admins (separate multiple names with commas)">
-        <div class="form-actions"><button class="btn">Save Zone</button><button type="button" class="ghost-btn" id="zoneCancel" hidden>Cancel Edit</button></div>
-        <p id="zoneMessage" class="form-message" aria-live="polite"></p>
+
+      <!-- =========================
+           ZONE FORM
+      ========================= -->
+
+      <form
+        id="zoneForm"
+        class="panel"
+      >
+
+        <h3>
+          Add / Edit Zone
+        </h3>
+
+
+        <input
+          type="hidden"
+          name="original_name"
+          id="zoneOriginalName"
+        >
+
+
+        <input
+          name="name"
+          id="zoneName"
+          placeholder="Zone name"
+          required
+        >
+
+
+        <input
+          name="location"
+          id="zoneLocation"
+          placeholder="City / Province"
+          required
+        >
+
+
+        <input
+          name="leader"
+          id="zoneLeader"
+          placeholder="Zone Leader"
+        >
+
+
+        <input
+          name="vice_leader"
+          id="zoneViceLeader"
+          placeholder="Vice Leader"
+        >
+
+
+        <input
+          name="admins"
+          id="zoneAdmins"
+          placeholder="Admins (separate multiple names with commas)"
+        >
+
+
+        <div class="form-actions">
+
+          <button class="btn">
+            Save Zone
+          </button>
+
+          <button
+            type="button"
+            class="ghost-btn"
+            id="zoneCancel"
+            hidden
+          >
+            Cancel Edit
+          </button>
+
+        </div>
+
+
+        <p
+          id="zoneMessage"
+          class="form-message"
+          aria-live="polite"
+        ></p>
+
       </form>
+
     </div>
 
+
+    <!-- =========================
+         MEMBER RECORDS
+    ========================= -->
+
     <div class="panel admin-list">
-      <div class="section-head"><div><h3>Member Records</h3><p class="muted">Manage online member records.</p></div><button class="ghost-btn" id="refreshAdmin">Refresh</button></div>
+
+      <div class="section-head">
+
+        <div>
+
+          <h3>
+            Member Records
+          </h3>
+
+          <p class="muted">
+            Manage online member records.
+          </p>
+
+        </div>
+
+        <button
+          class="ghost-btn"
+          id="refreshAdmin"
+        >
+          Refresh
+        </button>
+
+      </div>
+
       <div id="adminMemberList"></div>
+
     </div>
+
+
+    <!-- =========================
+         ZONE RECORDS
+    ========================= -->
+
     <div class="panel admin-list">
-      <h3>Zone Records</h3>
+
+      <h3>
+        Zone Records
+      </h3>
+
       <div id="adminZoneList"></div>
+
     </div>
+
   </div>
+
 </section>
+
 </main>
-<footer>© 2026 Boys of M3 · Official Community Website</footer>
+
+
+<footer>
+  © 2026 Boys of M3 · Official Community Website
+</footer>
+
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="script.js"></script>
+
 </body>
 </html>
