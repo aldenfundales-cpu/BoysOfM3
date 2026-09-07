@@ -25,7 +25,7 @@ async function loadPublic(){
     renderAll(); return;
   }
   const [z,m,e] = await Promise.all([
-    sb.from('zones').select('name,location,leader').order('name'),
+    sb.from('zones').select('name,location,leader,vice_leader,admins').order('name'),
     sb.from('members').select('id,name,zone,bike,position,status').eq('status','verified').eq('public_visible',true).order('name'),
     sb.from('events').select('id,title,event_date,event_time,location,description').order('event_date',{ascending:true,nullsFirst:false})
   ]);
@@ -45,10 +45,33 @@ function renderAll(){
 }
 function renderZones(filter=''){
   const f=filter.toLowerCase();
-  const list=publicZones.filter(z=>(`${z.name} ${z.location} ${z.leader||''}`).toLowerCase().includes(f));
+
+  const list=publicZones.filter(z=>(
+    `${z.name} ${z.location} ${z.leader||''} ${z.vice_leader||''} ${z.admins||''}`
+  ).toLowerCase().includes(f));
+
   $('zoneGrid').innerHTML=list.map(z=>{
-    const count=publicMembers.filter(m=>m.zone.toLowerCase()===z.name.toLowerCase()).length;
-    return `<article class="card"><span class="tag">● ACTIVE ZONE</span><h3>${esc(z.name)}</h3><p>📍 ${esc(z.location)}</p><p>👑 ${esc(z.leader||'—')}</p><span class="tag">${count} verified members</span></article>`;
+    const count=publicMembers.filter(
+      m=>m.zone.toLowerCase()===z.name.toLowerCase()
+    ).length;
+
+    return `
+      <article class="card">
+        <span class="tag">● ACTIVE ZONE</span>
+
+        <h3>${esc(z.name)}</h3>
+
+        <p>📍 ${esc(z.location)}</p>
+
+        <p>👑 <b>Zone Leader:</b> ${esc(z.leader || 'TBA')}</p>
+
+        <p>⭐ <b>Vice Leader:</b> ${esc(z.vice_leader || 'TBA')}</p>
+
+        <p>🛡️ <b>Admins:</b> ${esc(z.admins || 'TBA')}</p>
+
+        <span class="tag">${count} verified members</span>
+      </article>
+    `;
   }).join('') || `<p class="muted">No zones found.</p>`;
 }
 function renderMembers(filter=''){
@@ -96,7 +119,28 @@ async function loadAdmin(){
 }
 function renderAdminLists(){
   $('adminMemberList').innerHTML=adminMembers.length ? `<div class="admin-table">${adminMembers.map(m=>`<div class="admin-row"><div><strong>${esc(m.id)}</strong> · ${esc(m.name)}<br><small>${esc(m.zone)} · ${esc(m.position)} · ${esc(m.status)} · ${m.public_visible?'Public':'Hidden'}</small></div><div class="row-actions"><button class="ghost-btn" data-edit-member="${esc(m.id)}">Edit</button><button class="danger small" data-delete-member="${esc(m.id)}">Delete</button></div></div>`).join('')}</div>` : `<p class="muted">No members in the database yet.</p>`;
-  $('adminZoneList').innerHTML=adminZones.length ? `<div class="admin-table">${adminZones.map(z=>`<div class="admin-row"><div><strong>${esc(z.name)}</strong><br><small>${esc(z.location)} · Leader: ${esc(z.leader||'—')}</small></div><div class="row-actions"><button class="ghost-btn" data-edit-zone="${esc(z.name)}">Edit</button><button class="danger small" data-delete-zone="${esc(z.name)}">Delete</button></div></div>`).join('')}</div>` : `<p class="muted">No zones in the database yet.</p>`;
+  $('adminZoneList').innerHTML = adminZones.length
+  ? `<div class="admin-table">
+      ${adminZones.map(z => `
+        <div class="admin-row">
+          <div>
+            <strong>${esc(z.name)}</strong><br>
+            <small>
+              ${esc(z.location)}<br>
+              Zone Leader: ${esc(z.leader || '—')}<br>
+              Vice Leader: ${esc(z.vice_leader || '—')}<br>
+              Admins: ${esc(z.admins || '—')}
+            </small>
+          </div>
+
+          <div class="row-actions">
+            <button class="ghost-btn" data-edit-zone="${esc(z.name)}">Edit</button>
+            <button class="danger small" data-delete-zone="${esc(z.name)}">Delete</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>`
+  : `<p class="muted">No zones in the database yet.</p>`;
   document.querySelectorAll('[data-edit-member]').forEach(b=>b.onclick=()=>editMember(b.dataset.editMember));
   document.querySelectorAll('[data-delete-member]').forEach(b=>b.onclick=()=>deleteMember(b.dataset.deleteMember));
   document.querySelectorAll('[data-edit-zone]').forEach(b=>b.onclick=()=>editZone(b.dataset.editZone));
@@ -108,8 +152,21 @@ function editMember(id){
   $('memberOriginalId').value=m.id; $('memberId').value=m.id; $('memberName').value=m.name; $('memberZone').value=m.zone; $('memberBike').value=m.bike; $('memberPosition').value=m.position; $('memberStatus').value=m.status; $('memberPublic').checked=m.public_visible; $('memberFormTitle').textContent='Edit Member'; $('memberSubmit').textContent='Update Member'; $('memberCancel').hidden=false; $('memberForm').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function editZone(name){
-  const z=adminZones.find(x=>x.name===name); if(!z)return;
-  $('zoneOriginalName').value=z.name; $('zoneName').value=z.name; $('zoneLocation').value=z.location; $('zoneLeader').value=z.leader||''; $('zoneCancel').hidden=false; $('zoneForm').scrollIntoView({behavior:'smooth',block:'center'});
+  const z=adminZones.find(x=>x.name===name);
+  if(!z)return;
+
+  $('zoneOriginalName').value=z.name;
+  $('zoneName').value=z.name;
+  $('zoneLocation').value=z.location;
+  $('zoneLeader').value=z.leader||'';
+  $('zoneViceLeader').value=z.vice_leader||'';
+  $('zoneAdmins').value=z.admins||'';
+
+  $('zoneCancel').hidden=false;
+  $('zoneForm').scrollIntoView({
+    behavior:'smooth',
+    block:'center'
+  });
 }
 async function deleteMember(id){
   if(!confirm(`Delete member ${id}? This cannot be undone.`))return;
@@ -162,7 +219,15 @@ $('memberForm').onsubmit=async e=>{
 
 $('zoneForm').onsubmit=async e=>{
   e.preventDefault(); if(!sb)return;
-  const original=$('zoneOriginalName').value.trim(); const row={name:$('zoneName').value.trim(),location:$('zoneLocation').value.trim(),leader:$('zoneLeader').value.trim()||'To be assigned'};
+  const original=$('zoneOriginalName').value.trim();
+
+const row={
+  name:$('zoneName').value.trim(),
+  location:$('zoneLocation').value.trim(),
+  leader:$('zoneLeader').value.trim() || 'TBA',
+  vice_leader:$('zoneViceLeader').value.trim() || 'TBA',
+  admins:$('zoneAdmins').value.trim() || 'TBA'
+};
   message('zoneMessage','Saving...');
   if(original && original!==row.name){
     const {error:e1}=await sb.from('zones').insert(row); if(e1){message('zoneMessage',e1.message,'error');return;}
