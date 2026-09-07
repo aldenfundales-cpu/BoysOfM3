@@ -1,230 +1,537 @@
 const { createClient } = window.supabase;
+
 const SUPABASE_URL = window.BOM3_SUPABASE_URL;
 const SUPABASE_KEY = window.BOM3_SUPABASE_ANON_KEY;
-const configured = SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes('YOUR_') && !SUPABASE_KEY.includes('YOUR_');
-const sb = configured ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-const $ = (id) => document.getElementById(id);
-const esc = (s='') => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-const formatDate = d => d ? new Date(`${d}T00:00:00`).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : 'TBA';
+const configured =
+  SUPABASE_URL &&
+  SUPABASE_KEY &&
+  !SUPABASE_URL.includes('YOUR_') &&
+  !SUPABASE_KEY.includes('YOUR_');
+
+const sb = configured
+  ? createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
+
+const $ = id => document.getElementById(id);
+
+const esc = (s='') =>
+  String(s).replace(
+    /[&<>"']/g,
+    c => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    }[c])
+  );
+
+const formatDate = d =>
+  d
+    ? new Date(`${d}T00:00:00`).toLocaleDateString(
+        undefined,
+        {
+          year:'numeric',
+          month:'short',
+          day:'numeric'
+        }
+      )
+    : 'TBA';
+
 
 let publicMembers = [];
 let publicZones = [];
 let publicEvents = [];
+
 let adminMembers = [];
 let adminZones = [];
 
-/* Selected Zone for Member Directory */
 let selectedZone = '';
 
-function showNotice(msg, type='info') {
+
+/* =========================
+   NOTICES
+========================= */
+
+function showNotice(msg,type='info'){
   const el=$('setupNotice');
+
+  if(!el) return;
+
   el.hidden=false;
   el.className=`setup-notice ${type}`;
   el.textContent=msg;
 }
 
+
 function clearNotice(){
-  $('setupNotice').hidden=true;
+  const el=$('setupNotice');
+
+  if(el){
+    el.hidden=true;
+  }
 }
 
-function message(id,text,type='') {
+
+function message(id,text,type=''){
   const el=$(id);
+
+  if(!el) return;
+
   el.textContent=text;
   el.className=`form-message ${type}`;
 }
+
 
 /* =========================
    LOAD PUBLIC DATA
 ========================= */
 
 async function loadPublic(){
+
   if(!sb){
+
     showNotice(
       'Supabase is not connected yet. Add your project URL and public anon/publishable key to supabase-config.js, then refresh.',
       'warn'
     );
+
     renderAll();
+
     return;
   }
 
+
   const [z,m,e] = await Promise.all([
-    sb.from('zones')
-      .select('name,location,leader,vice_leader,admins')
+
+    sb
+      .from('zones')
+      .select(
+        'name,location,leader,vice_leader,admins'
+      )
       .order('name'),
 
-    sb.from('members')
-      .select('id,name,zone,bike,position,status')
+
+    sb
+      .from('members')
+      .select(
+        'id,name,zone,bike,position,status'
+      )
       .eq('status','verified')
       .eq('public_visible',true)
       .order('name'),
 
-    sb.from('events')
-      .select('id,title,event_date,event_time,location,description')
-      .order('event_date',{ascending:true,nullsFirst:false})
+
+    sb
+      .from('events')
+      .select(
+        'id,title,event_date,event_time,location,description'
+      )
+      .order(
+        'event_date',
+        {
+          ascending:true,
+          nullsFirst:false
+        }
+      )
+
   ]);
 
+
   if(z.error || m.error || e.error){
-    console.error(z.error || m.error || e.error);
+
+    console.error(
+      z.error ||
+      m.error ||
+      e.error
+    );
+
     showNotice(
-      'The database is connected, but the tables/policies are not ready. Run database.sql in Supabase SQL Editor.',
+      'The database is connected, but the tables/policies are not ready.',
       'error'
     );
+
     return;
   }
 
+
   clearNotice();
 
-  publicZones = z.data || [];
-  publicMembers = m.data || [];
-  publicEvents = e.data || [];
+  publicZones=z.data || [];
+  publicMembers=m.data || [];
+  publicEvents=e.data || [];
 
   renderAll();
 }
 
+
 /* =========================
-   RENDER EVERYTHING
+   RENDER ALL
 ========================= */
 
 function renderAll(){
-  $('zoneCount').textContent = publicZones.length;
-  $('memberCount').textContent = publicMembers.length;
 
-  $('eventCount').textContent = publicEvents.filter(
-    e => !e.event_date ||
-    new Date(`${e.event_date}T23:59:59`) >= new Date()
-  ).length;
+  if($('zoneCount')){
+    $('zoneCount').textContent=
+      publicZones.length;
+  }
 
-  renderZones($('zoneSearch').value || '');
+
+  if($('memberCount')){
+    $('memberCount').textContent=
+      publicMembers.length;
+  }
+
+
+  if($('eventCount')){
+
+    $('eventCount').textContent=
+      publicEvents.filter(e=>
+
+        !e.event_date ||
+
+        new Date(
+          `${e.event_date}T23:59:59`
+        ) >= new Date()
+
+      ).length;
+  }
+
+
+  renderZones(
+    $('zoneSearch')
+      ? $('zoneSearch').value || ''
+      : ''
+  );
+
+
+  /* AUTOMATICALLY LOAD EXISTING ZONES
+     INTO MEMBER FORM DROPDOWN */
+  populateMemberZoneDropdown();
+
 
   if(selectedZone){
-    renderMembers($('memberSearch').value || '');
+
+    renderMembers(
+      $('memberSearch')
+        ? $('memberSearch').value || ''
+        : ''
+    );
   }
+
 
   renderEvents();
 }
+
+
+/* =========================
+   MEMBER ZONE DROPDOWN
+========================= */
+
+function populateMemberZoneDropdown(){
+
+  const select=$('memberZone');
+
+  if(!select) return;
+
+
+  const currentValue=
+    select.value;
+
+
+  select.innerHTML=`
+    <option value="">
+      Select Zone
+    </option>
+
+    ${publicZones.map(z=>`
+      <option value="${esc(z.name)}">
+        ${esc(z.name)}
+      </option>
+    `).join('')}
+  `;
+
+
+  if(
+    currentValue &&
+    publicZones.some(
+      z=>z.name===currentValue
+    )
+  ){
+
+    select.value=currentValue;
+  }
+}
+
 
 /* =========================
    ZONE DIRECTORY
 ========================= */
 
 function renderZones(filter=''){
-  const f = filter.toLowerCase();
 
-  const list = publicZones.filter(z => (
-    `${z.name} ${z.location} ${z.leader||''} ${z.vice_leader||''} ${z.admins||''}`
-  ).toLowerCase().includes(f));
+  const f=
+    filter.toLowerCase();
 
-  $('zoneGrid').innerHTML = list.map(z => {
 
-    const count = publicMembers.filter(
-      m => (m.zone || '').toLowerCase() === z.name.toLowerCase()
-    ).length;
+  const list=
+    publicZones.filter(z=>(
 
-    return `
-      <article
-        class="card zone-card"
-        data-zone="${esc(z.name)}"
-        role="button"
-        tabindex="0"
-        title="View ${esc(z.name)} members"
-      >
+      `${z.name}
+       ${z.location}
+       ${z.leader || ''}
+       ${z.vice_leader || ''}
+       ${z.admins || ''}`
 
-        <span class="tag">● ACTIVE ZONE</span>
+    ).toLowerCase().includes(f));
 
-        <h3>${esc(z.name)}</h3>
 
-        <p>📍 ${esc(z.location)}</p>
+  const grid=$('zoneGrid');
 
-        <p>👑 <b>Zone Leader:</b> ${esc(z.leader || 'TBA')}</p>
+  if(!grid) return;
 
-        <p>⭐ <b>Vice Leader:</b> ${esc(z.vice_leader || 'TBA')}</p>
 
-        <p>🛡️ <b>Admins:</b> ${esc(z.admins || 'TBA')}</p>
+  grid.innerHTML=
+    list.map(z=>{
 
-        <span class="tag">${count} verified members</span>
 
-      </article>
-    `;
+      const count=
+        publicMembers.filter(
+          m=>
+            (m.zone || '')
+              .toLowerCase()
+            ===
+            z.name.toLowerCase()
+        ).length;
 
-  }).join('') || `<p class="muted">No zones found.</p>`;
 
-  /* Click Zone */
-  document.querySelectorAll('.zone-card').forEach(card => {
+      return `
 
-    card.onclick = () => {
-      showZoneMembers(card.dataset.zone);
-    };
+        <article
+          class="card zone-card"
+          data-zone="${esc(z.name)}"
+          role="button"
+          tabindex="0"
+          title="View ${esc(z.name)} members"
+        >
 
-    /* Keyboard support */
-    card.onkeydown = e => {
-      if(e.key === 'Enter' || e.key === ' '){
-        e.preventDefault();
-        showZoneMembers(card.dataset.zone);
-      }
-    };
+          <span class="tag">
+            ● ACTIVE ZONE
+          </span>
 
-  });
+          <h3>
+            ${esc(z.name)}
+          </h3>
+
+          <p>
+            📍 ${esc(z.location)}
+          </p>
+
+          <p>
+            👑
+            <b>Zone Leader:</b>
+            ${esc(z.leader || 'TBA')}
+          </p>
+
+          <p>
+            ⭐
+            <b>Vice Leader:</b>
+            ${esc(
+              z.vice_leader || 'TBA'
+            )}
+          </p>
+
+          <p>
+            🛡️
+            <b>Admins:</b>
+            ${esc(z.admins || 'TBA')}
+          </p>
+
+          <span class="tag">
+            ${count} verified members
+          </span>
+
+        </article>
+
+      `;
+
+    }).join('')
+
+    ||
+
+    `<p class="muted">
+      No zones found.
+    </p>`;
+
+
+  document
+    .querySelectorAll(
+      '.zone-card'
+    )
+    .forEach(card=>{
+
+
+      card.onclick=()=>{
+
+        showZoneMembers(
+          card.dataset.zone
+        );
+
+      };
+
+
+      card.onkeydown=e=>{
+
+        if(
+          e.key==='Enter' ||
+          e.key===' '
+        ){
+
+          e.preventDefault();
+
+          showZoneMembers(
+            card.dataset.zone
+          );
+
+        }
+
+      };
+
+    });
 }
+
 
 /* =========================
    MEMBERS
 ========================= */
 
 function renderMembers(filter=''){
-  const f = filter.toLowerCase();
 
-  let list = publicMembers;
+  const grid=$('memberGrid');
 
-  /* Only show members of selected zone */
+  if(!grid) return;
+
+
+  const f=
+    filter.toLowerCase();
+
+
+  let list=
+    publicMembers;
+
+
   if(selectedZone){
-    list = list.filter(
-      m => (m.zone || '').toLowerCase() === selectedZone.toLowerCase()
-    );
+
+    list=
+      list.filter(
+        m=>
+
+          (m.zone || '')
+            .toLowerCase()
+
+          ===
+
+          selectedZone
+            .toLowerCase()
+
+      );
   }
 
-  /* Search only inside selected zone */
-  list = list.filter(m => (
-    `${m.id} ${m.name} ${m.zone} ${m.bike} ${m.position}`
-  ).toLowerCase().includes(f));
 
-  $('memberGrid').innerHTML = list.map(m => `
-    <article class="card">
+  list=
+    list.filter(m=>(
 
-      <span class="tag">✓ VERIFIED</span>
+      `${m.id}
+       ${m.name}
+       ${m.zone}
+       ${m.bike}
+       ${m.position}`
 
-      <h3>${esc(m.name)}</h3>
+    ).toLowerCase().includes(f));
 
-      <p><b>${esc(m.id)}</b></p>
 
-      <p>📍 ${esc(m.zone)}</p>
+  grid.innerHTML=
+    list.map(m=>`
 
-      <p>🏍️ ${esc(m.bike)}</p>
+      <article class="card">
 
-      <p>🎖️ ${esc(m.position)}</p>
+        <span class="tag">
+          ✓ VERIFIED
+        </span>
 
-    </article>
-  `).join('') ||
-  `<p class="muted">No verified members found in this zone.</p>`;
+        <h3>
+          ${esc(m.name)}
+        </h3>
+
+        <p>
+          <b>
+            ${esc(m.id)}
+          </b>
+        </p>
+
+        <p>
+          📍 ${esc(m.zone)}
+        </p>
+
+        <p>
+          🏍️ ${esc(m.bike)}
+        </p>
+
+        <p>
+          🎖️ ${esc(m.position)}
+        </p>
+
+      </article>
+
+    `).join('')
+
+    ||
+
+    `<p class="muted">
+      No verified members found in this zone.
+    </p>`;
 }
 
+
 /* =========================
-   OPEN SELECTED ZONE MEMBERS
+   SHOW ZONE MEMBERS
 ========================= */
 
 function showZoneMembers(zoneName){
 
-  selectedZone = zoneName;
+  selectedZone=
+    zoneName;
 
-  $('membersTitle').textContent = `${zoneName} Members`;
 
-  $('memberSearch').value = '';
+  if($('membersTitle')){
 
-  const section = $('members');
+    $('membersTitle').textContent=
+      `${zoneName} Members`;
 
-  section.hidden = false;
+  }
+
+
+  if($('memberSearch')){
+
+    $('memberSearch').value='';
+
+  }
+
+
+  const section=
+    $('members');
+
+
+  if(!section) return;
+
+
+  section.hidden=false;
+
 
   renderMembers('');
+
 
   section.scrollIntoView({
     behavior:'smooth',
@@ -232,113 +539,303 @@ function showZoneMembers(zoneName){
   });
 }
 
+
 /* =========================
    CLOSE MEMBERS
 ========================= */
 
 function closeZoneMembers(){
 
-  selectedZone = '';
+  selectedZone='';
 
-  $('memberSearch').value = '';
 
-  $('membersTitle').textContent = 'Members';
+  if($('memberSearch')){
+    $('memberSearch').value='';
+  }
 
-  $('memberGrid').innerHTML = '';
 
-  $('members').hidden = true;
+  if($('membersTitle')){
+    $('membersTitle').textContent=
+      'Members';
+  }
+
+
+  if($('memberGrid')){
+    $('memberGrid').innerHTML='';
+  }
+
+
+  if($('members')){
+    $('members').hidden=true;
+  }
 }
+
 
 /* =========================
    EVENTS
 ========================= */
 
 function renderEvents(){
-  $('eventGrid').innerHTML = publicEvents.map(e => `
-    <article class="card">
 
-      <span class="tag">EVENT</span>
+  const grid=$('eventGrid');
 
-      <h3>${esc(e.title)}</h3>
+  if(!grid) return;
 
-      <p>📅 ${formatDate(e.event_date)}</p>
 
-      <p>🕒 ${esc(e.event_time || 'TBA')}</p>
+  grid.innerHTML=
+    publicEvents.map(e=>`
 
-      <p>📍 ${esc(e.location || 'TBA')}</p>
+      <article class="card">
 
-      ${e.description ? `<p>${esc(e.description)}</p>` : ''}
+        <span class="tag">
+          EVENT
+        </span>
 
-    </article>
-  `).join('') || `<p class="muted">No events yet.</p>`;
+        <h3>
+          ${esc(e.title)}
+        </h3>
+
+        <p>
+          📅 ${formatDate(
+            e.event_date
+          )}
+        </p>
+
+        <p>
+          🕒 ${esc(
+            e.event_time || 'TBA'
+          )}
+        </p>
+
+        <p>
+          📍 ${esc(
+            e.location || 'TBA'
+          )}
+        </p>
+
+        ${
+          e.description
+          ?
+          `<p>
+            ${esc(e.description)}
+          </p>`
+          :
+          ''
+        }
+
+      </article>
+
+    `).join('')
+
+    ||
+
+    `<p class="muted">
+      No events yet.
+    </p>`;
 }
 
+
 /* =========================
-   RESET FORMS
+   RESET MEMBER FORM
 ========================= */
 
 function resetMemberForm(){
-  $('memberForm').reset();
-  $('memberBike').value='Mio i 125';
-  $('memberPosition').value='Member';
-  $('memberPublic').checked=true;
-  $('memberStatus').value='verified';
-  $('memberOriginalId').value='';
-  $('memberFormTitle').textContent='Add Verified Member';
-  $('memberSubmit').textContent='Save Member';
-  $('memberCancel').hidden=true;
-  message('memberMessage','');
+
+  const form=
+    $('memberForm');
+
+
+  if(form){
+    form.reset();
+  }
+
+
+  if($('memberBike')){
+    $('memberBike').value=
+      'Mio i 125';
+  }
+
+
+  if($('memberPosition')){
+    $('memberPosition').value=
+      'Member';
+  }
+
+
+  if($('memberPublic')){
+    $('memberPublic').checked=
+      true;
+  }
+
+
+  if($('memberStatus')){
+    $('memberStatus').value=
+      'verified';
+  }
+
+
+  if($('memberOriginalId')){
+    $('memberOriginalId').value='';
+  }
+
+
+  if($('memberFormTitle')){
+    $('memberFormTitle').textContent=
+      'Add Verified Member';
+  }
+
+
+  if($('memberSubmit')){
+    $('memberSubmit').textContent=
+      'Save Member';
+  }
+
+
+  if($('memberCancel')){
+    $('memberCancel').hidden=true;
+  }
+
+
+  populateMemberZoneDropdown();
+
+  message(
+    'memberMessage',
+    ''
+  );
 }
 
+
+/* =========================
+   RESET ZONE FORM
+========================= */
+
 function resetZoneForm(){
-  $('zoneForm').reset();
-  $('zoneOriginalName').value='';
-  $('zoneCancel').hidden=true;
-  message('zoneMessage','');
+
+  const form=$('zoneForm');
+
+  if(form){
+    form.reset();
+  }
+
+
+  if($('zoneOriginalName')){
+    $('zoneOriginalName').value='';
+  }
+
+
+  if($('zoneCancel')){
+    $('zoneCancel').hidden=true;
+  }
+
+
+  message(
+    'zoneMessage',
+    ''
+  );
 }
+
 
 /* =========================
    ADMIN AUTH
 ========================= */
 
 async function checkAdmin(){
-  if(!sb) return false;
 
-  const {data:{user}} = await sb.auth.getUser();
+  if(!sb){
+    return false;
+  }
+
+
+  const {
+    data:{user}
+  }=
+  await sb.auth.getUser();
+
 
   if(!user){
+
     setLoggedOut();
+
     return false;
   }
 
-  const {data,error} = await sb
+
+  const {
+    data,
+    error
+  }=
+  await sb
     .from('admins')
-    .select('user_id,email')
-    .eq('user_id',user.id)
+    .select(
+      'user_id,email'
+    )
+    .eq(
+      'user_id',
+      user.id
+    )
     .maybeSingle();
 
-  if(error || !data){
+
+  if(
+    error ||
+    !data
+  ){
+
     setLoggedOut();
+
     return false;
   }
 
-  setLoggedIn(user,data);
+
+  setLoggedIn(
+    user,
+    data
+  );
+
+
   await loadAdmin();
+
 
   return true;
 }
 
+
 function setLoggedOut(){
-  $('loginPanel').hidden=false;
-  $('dashboard').hidden=true;
-  $('adminEmail').textContent='';
+
+  if($('loginPanel')){
+    $('loginPanel').hidden=false;
+  }
+
+  if($('dashboard')){
+    $('dashboard').hidden=true;
+  }
+
+  if($('adminEmail')){
+    $('adminEmail').textContent='';
+  }
 }
 
+
 function setLoggedIn(user,admin){
-  $('loginPanel').hidden=true;
-  $('dashboard').hidden=false;
-  $('adminEmail').textContent=admin.email || user.email || '';
+
+  if($('loginPanel')){
+    $('loginPanel').hidden=true;
+  }
+
+  if($('dashboard')){
+    $('dashboard').hidden=false;
+  }
+
+  if($('adminEmail')){
+
+    $('adminEmail').textContent=
+      admin.email ||
+      user.email ||
+      '';
+
+  }
 }
+
 
 /* =========================
    LOAD ADMIN DATA
@@ -346,20 +843,40 @@ function setLoggedIn(user,admin){
 
 async function loadAdmin(){
 
-  const [m,z] = await Promise.all([
+  if(!sb) return;
 
-    sb.from('members')
-      .select('*')
-      .order('created_at',{ascending:false}),
 
-    sb.from('zones')
-      .select('*')
-      .order('name')
+  const [m,z]=
+    await Promise.all([
 
-  ]);
+      sb
+        .from('members')
+        .select('*')
+        .order(
+          'created_at',
+          {
+            ascending:false
+          }
+        ),
 
-  if(m.error || z.error){
-    console.error(m.error || z.error);
+      sb
+        .from('zones')
+        .select('*')
+        .order('name')
+
+    ]);
+
+
+  if(
+    m.error ||
+    z.error
+  ){
+
+    console.error(
+      m.error ||
+      z.error
+    );
+
 
     message(
       'loginMessage',
@@ -367,14 +884,22 @@ async function loadAdmin(){
       'error'
     );
 
+
     return;
   }
 
-  adminMembers = m.data || [];
-  adminZones = z.data || [];
+
+  adminMembers=
+    m.data || [];
+
+
+  adminZones=
+    z.data || [];
+
 
   renderAdminLists();
 }
+
 
 /* =========================
    ADMIN LISTS
@@ -382,23 +907,55 @@ async function loadAdmin(){
 
 function renderAdminLists(){
 
-  $('adminMemberList').innerHTML = adminMembers.length
-    ? `<div class="admin-table">
+  const memberList=
+    $('adminMemberList');
 
-        ${adminMembers.map(m => `
+  const zoneList=
+    $('adminZoneList');
+
+
+  if(memberList){
+
+    memberList.innerHTML=
+
+      adminMembers.length
+
+      ?
+
+      `<div class="admin-table">
+
+        ${adminMembers.map(m=>`
+
           <div class="admin-row">
 
             <div>
-              <strong>${esc(m.id)}</strong> · ${esc(m.name)}
+
+              <strong>
+                ${esc(m.id)}
+              </strong>
+
+              · ${esc(m.name)}
+
               <br>
 
               <small>
-                ${esc(m.zone)} ·
-                ${esc(m.position)} ·
-                ${esc(m.status)} ·
-                ${m.public_visible ? 'Public' : 'Hidden'}
+
+                ${esc(m.zone)}
+                ·
+                ${esc(m.position)}
+                ·
+                ${esc(m.status)}
+                ·
+                ${
+                  m.public_visible
+                  ? 'Public'
+                  : 'Hidden'
+                }
+
               </small>
+
             </div>
+
 
             <div class="row-actions">
 
@@ -419,39 +976,71 @@ function renderAdminLists(){
             </div>
 
           </div>
+
         `).join('')}
 
       </div>`
 
-    : `<p class="muted">No members in the database yet.</p>`;
+      :
 
-  $('adminZoneList').innerHTML = adminZones.length
-    ? `<div class="admin-table">
+      `<p class="muted">
+        No members in the database yet.
+      </p>`;
 
-        ${adminZones.map(z => `
+  }
+
+
+  if(zoneList){
+
+    zoneList.innerHTML=
+
+      adminZones.length
+
+      ?
+
+      `<div class="admin-table">
+
+        ${adminZones.map(z=>`
+
           <div class="admin-row">
 
             <div>
 
-              <strong>${esc(z.name)}</strong>
+              <strong>
+                ${esc(z.name)}
+              </strong>
+
               <br>
 
               <small>
 
                 ${esc(z.location)}
+
                 <br>
 
-                Zone Leader: ${esc(z.leader || '—')}
+                Zone Leader:
+                ${esc(
+                  z.leader || '—'
+                )}
+
                 <br>
 
-                Vice Leader: ${esc(z.vice_leader || '—')}
+                Vice Leader:
+                ${esc(
+                  z.vice_leader || '—'
+                )}
+
                 <br>
 
-                Admins: ${esc(z.admins || '—')}
+                Admins:
+                ${esc(
+                  z.admins || '—'
+                )}
 
               </small>
 
             </div>
+
 
             <div class="row-actions">
 
@@ -472,24 +1061,72 @@ function renderAdminLists(){
             </div>
 
           </div>
+
         `).join('')}
 
       </div>`
 
-    : `<p class="muted">No zones in the database yet.</p>`;
+      :
 
-  document.querySelectorAll('[data-edit-member]')
-    .forEach(b => b.onclick = () => editMember(b.dataset.editMember));
+      `<p class="muted">
+        No zones in the database yet.
+      </p>`;
 
-  document.querySelectorAll('[data-delete-member]')
-    .forEach(b => b.onclick = () => deleteMember(b.dataset.deleteMember));
+  }
 
-  document.querySelectorAll('[data-edit-zone]')
-    .forEach(b => b.onclick = () => editZone(b.dataset.editZone));
 
-  document.querySelectorAll('[data-delete-zone]')
-    .forEach(b => b.onclick = () => deleteZone(b.dataset.deleteZone));
+  document
+    .querySelectorAll(
+      '[data-edit-member]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          editMember(
+            b.dataset.editMember
+          )
+    );
+
+
+  document
+    .querySelectorAll(
+      '[data-delete-member]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          deleteMember(
+            b.dataset.deleteMember
+          )
+    );
+
+
+  document
+    .querySelectorAll(
+      '[data-edit-zone]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          editZone(
+            b.dataset.editZone
+          )
+    );
+
+
+  document
+    .querySelectorAll(
+      '[data-delete-zone]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          deleteZone(
+            b.dataset.deleteZone
+          )
+    );
 }
+
 
 /* =========================
    EDIT MEMBER
@@ -497,22 +1134,52 @@ function renderAdminLists(){
 
 function editMember(id){
 
-  const m = adminMembers.find(x => x.id === id);
+  const m=
+    adminMembers.find(
+      x=>x.id===id
+    );
+
 
   if(!m) return;
 
-  $('memberOriginalId').value=m.id;
-  $('memberId').value=m.id;
-  $('memberName').value=m.name;
-  $('memberZone').value=m.zone;
-  $('memberBike').value=m.bike;
-  $('memberPosition').value=m.position;
-  $('memberStatus').value=m.status;
-  $('memberPublic').checked=m.public_visible;
 
-  $('memberFormTitle').textContent='Edit Member';
-  $('memberSubmit').textContent='Update Member';
-  $('memberCancel').hidden=false;
+  populateMemberZoneDropdown();
+
+
+  $('memberOriginalId').value=
+    m.id;
+
+  $('memberId').value=
+    m.id;
+
+  $('memberName').value=
+    m.name;
+
+  $('memberZone').value=
+    m.zone;
+
+  $('memberBike').value=
+    m.bike;
+
+  $('memberPosition').value=
+    m.position;
+
+  $('memberStatus').value=
+    m.status;
+
+  $('memberPublic').checked=
+    m.public_visible;
+
+
+  $('memberFormTitle').textContent=
+    'Edit Member';
+
+  $('memberSubmit').textContent=
+    'Update Member';
+
+  $('memberCancel').hidden=
+    false;
+
 
   $('memberForm').scrollIntoView({
     behavior:'smooth',
@@ -520,24 +1187,44 @@ function editMember(id){
   });
 }
 
+
 /* =========================
    EDIT ZONE
 ========================= */
 
 function editZone(name){
 
-  const z = adminZones.find(x => x.name === name);
+  const z=
+    adminZones.find(
+      x=>x.name===name
+    );
+
 
   if(!z) return;
 
-  $('zoneOriginalName').value=z.name;
-  $('zoneName').value=z.name;
-  $('zoneLocation').value=z.location;
-  $('zoneLeader').value=z.leader || '';
-  $('zoneViceLeader').value=z.vice_leader || '';
-  $('zoneAdmins').value=z.admins || '';
 
-  $('zoneCancel').hidden=false;
+  $('zoneOriginalName').value=
+    z.name;
+
+  $('zoneName').value=
+    z.name;
+
+  $('zoneLocation').value=
+    z.location;
+
+  $('zoneLeader').value=
+    z.leader || '';
+
+  $('zoneViceLeader').value=
+    z.vice_leader || '';
+
+  $('zoneAdmins').value=
+    z.admins || '';
+
+
+  $('zoneCancel').hidden=
+    false;
+
 
   $('zoneForm').scrollIntoView({
     behavior:'smooth',
@@ -545,29 +1232,43 @@ function editZone(name){
   });
 }
 
+
 /* =========================
    DELETE MEMBER
 ========================= */
 
 async function deleteMember(id){
 
-  if(!confirm(`Delete member ${id}? This cannot be undone.`)){
+  if(
+    !confirm(
+      `Delete member ${id}? This cannot be undone.`
+    )
+  ){
     return;
   }
 
-  const {error} = await sb
-    .from('members')
-    .delete()
-    .eq('id',id);
+
+  const {error}=
+    await sb
+      .from('members')
+      .delete()
+      .eq('id',id);
+
 
   if(error){
-    alert(error.message);
+
+    alert(
+      error.message
+    );
+
     return;
   }
+
 
   await loadAdmin();
   await loadPublic();
 }
+
 
 /* =========================
    DELETE ZONE
@@ -575,305 +1276,709 @@ async function deleteMember(id){
 
 async function deleteZone(name){
 
-  if(!confirm(`Delete zone ${name}?`)){
+  if(
+    !confirm(
+      `Delete zone ${name}?`
+    )
+  ){
     return;
   }
 
-  const {error} = await sb
-    .from('zones')
-    .delete()
-    .eq('name',name);
+
+  const {error}=
+    await sb
+      .from('zones')
+      .delete()
+      .eq('name',name);
+
 
   if(error){
-    alert(error.message);
+
+    alert(
+      error.message
+    );
+
     return;
   }
+
 
   await loadAdmin();
   await loadPublic();
 }
 
+
 /* =========================
    PUBLIC SEARCH
 ========================= */
 
-$('zoneSearch').oninput = e => {
-  renderZones(e.target.value);
-};
+if($('zoneSearch')){
 
-$('memberSearch').oninput = e => {
-  renderMembers(e.target.value);
-};
+  $('zoneSearch').oninput=
+    e=>
+      renderZones(
+        e.target.value
+      );
 
-/* X BUTTON */
-$('closeMembers').onclick = closeZoneMembers;
+}
+
+
+if($('memberSearch')){
+
+  $('memberSearch').oninput=
+    e=>
+      renderMembers(
+        e.target.value
+      );
+
+}
+
+
+if($('closeMembers')){
+
+  $('closeMembers').onclick=
+    closeZoneMembers;
+
+}
+
 
 /* =========================
    VERIFY MEMBER
 ========================= */
 
-$('verifyBtn').onclick = async () => {
+if($('verifyBtn')){
 
-  const id = $('verifyInput').value.trim();
-  const r = $('verifyResult');
+  $('verifyBtn').onclick=
+    async()=>{
 
-  if(!id){
-    r.className='result bad';
-    r.innerHTML='Please enter a member ID.';
-    return;
-  }
 
-  if(!sb){
-    r.className='result bad';
-    r.innerHTML='Database is not connected yet.';
-    return;
-  }
+      const id=
+        $('verifyInput')
+          .value
+          .trim();
 
-  const {data,error} = await sb
-    .from('members')
-    .select('id,name,zone,bike,position,status')
-    .eq('id',id)
-    .eq('status','verified')
-    .eq('public_visible',true)
-    .maybeSingle();
 
-  if(error){
-    r.className='result bad';
-    r.innerHTML='Unable to check the database right now.';
-    return;
-  }
+      const r=
+        $('verifyResult');
 
-  r.className=`result ${data ? 'ok' : 'bad'}`;
 
-  r.innerHTML = data
-    ? `✓ <b>VERIFIED MEMBER</b><br>
-       <strong>${esc(data.name)}</strong> ·
-       ${esc(data.zone)} ·
-       ${esc(data.bike)}
-       <br>
-       <small>
-         Member ID: ${esc(data.id)} ·
-         ${esc(data.position)}
-       </small>`
+      if(!id){
 
-    : `✕ <b>NOT VERIFIED</b><br>
-       No active public verified member was found for that ID.`;
-};
+        r.className=
+          'result bad';
 
-$('verifyInput').onkeydown = e => {
-  if(e.key === 'Enter'){
-    $('verifyBtn').click();
-  }
-};
+        r.innerHTML=
+          'Please enter a member ID.';
+
+        return;
+      }
+
+
+      if(!sb){
+
+        r.className=
+          'result bad';
+
+        r.innerHTML=
+          'Database is not connected yet.';
+
+        return;
+      }
+
+
+      const {
+        data,
+        error
+      }=
+      await sb
+        .from('members')
+        .select(
+          'id,name,zone,bike,position,status'
+        )
+        .eq(
+          'id',
+          id
+        )
+        .eq(
+          'status',
+          'verified'
+        )
+        .eq(
+          'public_visible',
+          true
+        )
+        .maybeSingle();
+
+
+      if(error){
+
+        r.className=
+          'result bad';
+
+        r.innerHTML=
+          'Unable to check the database right now.';
+
+        return;
+      }
+
+
+      r.className=
+        `result ${
+          data
+          ? 'ok'
+          : 'bad'
+        }`;
+
+
+      r.innerHTML=
+
+        data
+
+        ?
+
+        `✓ <b>VERIFIED MEMBER</b>
+
+        <br>
+
+        <strong>
+          ${esc(data.name)}
+        </strong>
+
+        · ${esc(data.zone)}
+        · ${esc(data.bike)}
+
+        <br>
+
+        <small>
+
+          Member ID:
+          ${esc(data.id)}
+
+          ·
+          ${esc(data.position)}
+
+        </small>`
+
+        :
+
+        `✕ <b>NOT VERIFIED</b>
+
+        <br>
+
+        No active public verified member was found for that ID.`;
+
+    };
+
+}
+
+
+if($('verifyInput')){
+
+  $('verifyInput').onkeydown=
+    e=>{
+
+      if(e.key==='Enter'){
+
+        $('verifyBtn').click();
+
+      }
+
+    };
+
+}
+
 
 /* =========================
    ADMIN LOGIN
 ========================= */
 
-$('loginForm').onsubmit = async e => {
+if($('loginForm')){
 
-  e.preventDefault();
+  $('loginForm').onsubmit=
+    async e=>{
 
-  if(!sb){
-    message(
-      'loginMessage',
-      'Connect Supabase first.',
-      'error'
-    );
-    return;
-  }
 
-  message('loginMessage','Signing in...');
+      e.preventDefault();
 
-  const {error} = await sb.auth.signInWithPassword({
-    email:$('loginEmail').value.trim(),
-    password:$('loginPassword').value
-  });
 
-  if(error){
-    message('loginMessage',error.message,'error');
-    return;
-  }
+      if(!sb){
 
-  message('loginMessage','');
+        message(
+          'loginMessage',
+          'Connect Supabase first.',
+          'error'
+        );
 
-  await checkAdmin();
-};
+        return;
+      }
 
-$('logoutBtn').onclick = async () => {
-  await sb.auth.signOut();
-  setLoggedOut();
-};
 
-$('refreshAdmin').onclick=loadAdmin;
+      message(
+        'loginMessage',
+        'Signing in...'
+      );
 
-$('memberCancel').onclick=resetMemberForm;
-$('zoneCancel').onclick=resetZoneForm;
+
+      const {error}=
+        await sb.auth.signInWithPassword({
+
+          email:
+            $('loginEmail')
+              .value
+              .trim(),
+
+          password:
+            $('loginPassword')
+              .value
+
+        });
+
+
+      if(error){
+
+        message(
+          'loginMessage',
+          error.message,
+          'error'
+        );
+
+        return;
+      }
+
+
+      message(
+        'loginMessage',
+        ''
+      );
+
+
+      await checkAdmin();
+
+    };
+
+}
+
+
+/* =========================
+   LOGOUT / REFRESH
+========================= */
+
+if($('logoutBtn')){
+
+  $('logoutBtn').onclick=
+    async()=>{
+
+      await sb.auth.signOut();
+
+      setLoggedOut();
+
+    };
+
+}
+
+
+if($('refreshAdmin')){
+
+  $('refreshAdmin').onclick=
+    loadAdmin;
+
+}
+
+
+if($('memberCancel')){
+
+  $('memberCancel').onclick=
+    resetMemberForm;
+
+}
+
+
+if($('zoneCancel')){
+
+  $('zoneCancel').onclick=
+    resetZoneForm;
+
+}
+
 
 /* =========================
    SAVE MEMBER
 ========================= */
 
-$('memberForm').onsubmit = async e => {
+if($('memberForm')){
 
-  e.preventDefault();
+  $('memberForm').onsubmit=
+    async e=>{
 
-  if(!sb) return;
 
-  const original=$('memberOriginalId').value.trim();
+      e.preventDefault();
 
-  const row={
-    id:$('memberId').value.trim(),
-    name:$('memberName').value.trim(),
-    zone:$('memberZone').value.trim(),
-    bike:$('memberBike').value.trim() || 'Mio i 125',
-    position:$('memberPosition').value.trim() || 'Member',
-    status:$('memberStatus').value,
-    public_visible:$('memberPublic').checked
-  };
 
-  if(!row.id || !row.name || !row.zone){
-    return;
-  }
+      if(!sb) return;
 
-  message('memberMessage','Saving...');
 
-  if(original && original !== row.id){
+      const original=
+        $('memberOriginalId')
+          .value
+          .trim();
 
-    const {error:e1} = await sb
-      .from('members')
-      .insert(row);
 
-    if(e1){
-      message('memberMessage',e1.message,'error');
-      return;
-    }
+      const row={
 
-    const {error:e2} = await sb
-      .from('members')
-      .delete()
-      .eq('id',original);
+        id:
+          $('memberId')
+            .value
+            .trim(),
 
-    if(e2){
+        name:
+          $('memberName')
+            .value
+            .trim(),
+
+        zone:
+          $('memberZone')
+            .value
+            .trim(),
+
+        bike:
+          $('memberBike')
+            .value
+            .trim()
+          ||
+          'Mio i 125',
+
+        position:
+          $('memberPosition')
+            .value
+            .trim()
+          ||
+          'Member',
+
+        status:
+          $('memberStatus')
+            .value,
+
+        public_visible:
+          $('memberPublic')
+            .checked
+
+      };
+
+
+      if(
+        !row.id ||
+        !row.name ||
+        !row.zone
+      ){
+
+        message(
+          'memberMessage',
+          'Please complete the required fields.',
+          'error'
+        );
+
+        return;
+      }
+
+
       message(
         'memberMessage',
-        `New record saved, but old ID could not be deleted: ${e2.message}`,
-        'error'
+        'Saving...'
       );
-      return;
-    }
 
-  } else {
 
-    const {error} = await sb
-      .from('members')
-      .upsert(row,{onConflict:'id'});
+      if(
+        original &&
+        original !== row.id
+      ){
 
-    if(error){
-      message('memberMessage',error.message,'error');
-      return;
-    }
-  }
 
-  message(
-    'memberMessage',
-    'Member saved successfully.',
-    'ok'
-  );
+        const {error:e1}=
+          await sb
+            .from('members')
+            .insert(row);
 
-  resetMemberForm();
 
-  await loadAdmin();
-  await loadPublic();
-};
+        if(e1){
+
+          message(
+            'memberMessage',
+            e1.message,
+            'error'
+          );
+
+          return;
+        }
+
+
+        const {error:e2}=
+          await sb
+            .from('members')
+            .delete()
+            .eq(
+              'id',
+              original
+            );
+
+
+        if(e2){
+
+          message(
+            'memberMessage',
+            `New record saved, but old ID could not be deleted: ${e2.message}`,
+            'error'
+          );
+
+          return;
+        }
+
+
+      }else{
+
+
+        const {error}=
+          await sb
+            .from('members')
+            .upsert(
+              row,
+              {
+                onConflict:'id'
+              }
+            );
+
+
+        if(error){
+
+          message(
+            'memberMessage',
+            error.message,
+            'error'
+          );
+
+          return;
+        }
+
+      }
+
+
+      message(
+        'memberMessage',
+        'Member saved successfully.',
+        'ok'
+      );
+
+
+      resetMemberForm();
+
+
+      await loadAdmin();
+      await loadPublic();
+
+    };
+
+}
+
 
 /* =========================
    SAVE ZONE
 ========================= */
 
-$('zoneForm').onsubmit = async e => {
+if($('zoneForm')){
 
-  e.preventDefault();
+  $('zoneForm').onsubmit=
+    async e=>{
 
-  if(!sb) return;
 
-  const original=$('zoneOriginalName').value.trim();
+      e.preventDefault();
 
-  const row={
-    name:$('zoneName').value.trim(),
-    location:$('zoneLocation').value.trim(),
-    leader:$('zoneLeader').value.trim() || 'TBA',
-    vice_leader:$('zoneViceLeader').value.trim() || 'TBA',
-    admins:$('zoneAdmins').value.trim() || 'TBA'
-  };
 
-  message('zoneMessage','Saving...');
+      if(!sb) return;
 
-  if(original && original !== row.name){
 
-    const {error:e1} = await sb
-      .from('zones')
-      .insert(row);
+      const original=
+        $('zoneOriginalName')
+          .value
+          .trim();
 
-    if(e1){
-      message('zoneMessage',e1.message,'error');
-      return;
-    }
 
-    const {error:e2} = await sb
-      .from('zones')
-      .delete()
-      .eq('name',original);
+      const row={
 
-    if(e2){
+        name:
+          $('zoneName')
+            .value
+            .trim(),
+
+        location:
+          $('zoneLocation')
+            .value
+            .trim(),
+
+        leader:
+          $('zoneLeader')
+            .value
+            .trim()
+          ||
+          'TBA',
+
+        vice_leader:
+          $('zoneViceLeader')
+            .value
+            .trim()
+          ||
+          'TBA',
+
+        admins:
+          $('zoneAdmins')
+            .value
+            .trim()
+          ||
+          'TBA'
+
+      };
+
+
       message(
         'zoneMessage',
-        `New zone saved, but old zone could not be deleted: ${e2.message}`,
-        'error'
+        'Saving...'
       );
-      return;
-    }
 
-  } else {
 
-    const {error} = await sb
-      .from('zones')
-      .upsert(row,{onConflict:'name'});
+      if(
+        original &&
+        original !== row.name
+      ){
 
-    if(error){
-      message('zoneMessage',error.message,'error');
-      return;
-    }
-  }
 
-  message(
-    'zoneMessage',
-    'Zone saved successfully.',
-    'ok'
-  );
+        const {error:e1}=
+          await sb
+            .from('zones')
+            .insert(row);
 
-  resetZoneForm();
 
-  await loadAdmin();
-  await loadPublic();
-};
+        if(e1){
+
+          message(
+            'zoneMessage',
+            e1.message,
+            'error'
+          );
+
+          return;
+        }
+
+
+        const {error:e2}=
+          await sb
+            .from('zones')
+            .delete()
+            .eq(
+              'name',
+              original
+            );
+
+
+        if(e2){
+
+          message(
+            'zoneMessage',
+            `New zone saved, but old zone could not be deleted: ${e2.message}`,
+            'error'
+          );
+
+          return;
+        }
+
+
+      }else{
+
+
+        const {error}=
+          await sb
+            .from('zones')
+            .upsert(
+              row,
+              {
+                onConflict:'name'
+              }
+            );
+
+
+        if(error){
+
+          message(
+            'zoneMessage',
+            error.message,
+            'error'
+          );
+
+          return;
+        }
+
+      }
+
+
+      message(
+        'zoneMessage',
+        'Zone saved successfully.',
+        'ok'
+      );
+
+
+      resetZoneForm();
+
+
+      await loadAdmin();
+      await loadPublic();
+
+    };
+
+}
+
 
 /* =========================
    MOBILE MENU
 ========================= */
 
-const menuBtn=$('menuBtn');
-const nav=$('nav');
+const menuBtn=
+  $('menuBtn');
 
-menuBtn.onclick=()=>{
-  nav.classList.toggle('open');
-};
+const nav=
+  $('nav');
 
-nav.querySelectorAll('a').forEach(a=>{
-  a.addEventListener('click',()=>{
-    nav.classList.remove('open');
-  });
-});
+
+if(
+  menuBtn &&
+  nav
+){
+
+  menuBtn.onclick=
+    ()=>{
+
+      nav.classList.toggle(
+        'open'
+      );
+
+    };
+
+
+  nav
+    .querySelectorAll('a')
+    .forEach(a=>{
+
+      a.addEventListener(
+        'click',
+        ()=>{
+
+          nav.classList.remove(
+            'open'
+          );
+
+        }
+      );
+
+    });
+
+}
+
 
 /* =========================
    START WEBSITE
@@ -881,15 +1986,27 @@ nav.querySelectorAll('a').forEach(a=>{
 
 (async()=>{
 
+
   renderAll();
 
-  if(!sb) return;
 
-  sb.auth.onAuthStateChange(()=>{
-    checkAdmin();
-  });
+  if(!sb){
+    return;
+  }
+
+
+  sb.auth.onAuthStateChange(
+    ()=>{
+
+      checkAdmin();
+
+    }
+  );
+
 
   await loadPublic();
+
   await checkAdmin();
+
 
 })();
