@@ -47,6 +47,7 @@ let publicEvents = [];
 
 let adminMembers = [];
 let adminZones = [];
+let adminRequests = [];
 
 let selectedZone = '';
 
@@ -883,36 +884,49 @@ async function loadAdmin(){
   if(!sb) return;
 
 
-  const [m,z]=
-    await Promise.all([
+  const [m,z,r]=
+  await Promise.all([
 
-      sb
-        .from('members')
-        .select('*')
-        .order(
-          'created_at',
-          {
-            ascending:false
-          }
-        ),
+    sb
+      .from('members')
+      .select('*')
+      .order(
+        'created_at',
+        {
+          ascending:false
+        }
+      ),
 
-      sb
-        .from('zones')
-        .select('*')
-        .order('name')
+    sb
+      .from('zones')
+      .select('*')
+      .order('name'),
 
-    ]);
+    sb
+      .from('member_requests')
+      .select('*')
+      .eq('status','pending')
+      .order(
+        'submitted_at',
+        {
+          ascending:true
+        }
+      )
+
+  ]);
 
 
   if(
-    m.error ||
-    z.error
-  ){
+  m.error ||
+  z.error ||
+  r.error
+){
 
     console.error(
-      m.error ||
-      z.error
-    );
+  m.error ||
+  z.error ||
+  r.error
+);
 
 
     message(
@@ -933,6 +947,9 @@ async function loadAdmin(){
   adminZones=
     z.data || [];
 
+  adminRequests=
+  r.data || [];
+
 
   populateMemberZoneDropdown();
 
@@ -951,7 +968,74 @@ function renderAdminLists(){
 
   const zoneList=
     $('adminZoneList');
+  
+  const requestList=
+  $('adminRequestList');
 
+  
+  if(requestList){
+
+  requestList.innerHTML=
+
+    adminRequests.length
+
+    ?
+
+    `<div class="admin-table">
+
+      ${adminRequests.map(r=>`
+
+        <div class="admin-row">
+
+          <div>
+
+            <strong>
+              ${esc(r.member_id)}
+            </strong>
+
+            · ${esc(r.name)}
+
+            <br>
+
+            <small>
+              📍 ${esc(r.zone)}
+              ·
+              🏍️ ${esc(r.bike)}
+            </small>
+
+          </div>
+
+          <div class="row-actions">
+
+            <button
+              class="btn small"
+              data-approve-request="${r.id}"
+            >
+              Approve
+            </button>
+
+            <button
+              class="danger small"
+              data-reject-request="${r.id}"
+            >
+              Reject
+            </button>
+
+          </div>
+
+        </div>
+
+      `).join('')}
+
+    </div>`
+
+    :
+
+    `<p class="muted">
+      No pending membership requests.
+    </p>`;
+
+}
 
   if(memberList){
 
@@ -1164,9 +1248,146 @@ function renderAdminLists(){
             b.dataset.deleteZone
           )
     );
+document
+  .querySelectorAll(
+    '[data-approve-request]'
+  )
+  .forEach(
+    b=>
+      b.onclick=()=>
+        approveMemberRequest(
+          Number(
+            b.dataset.approveRequest
+          )
+        )
+  );
+
+
+document
+  .querySelectorAll(
+    '[data-reject-request]'
+  )
+  .forEach(
+    b=>
+      b.onclick=()=>
+        rejectMemberRequest(
+          Number(
+            b.dataset.rejectRequest
+          )
+        )
+  );
+}
+
+/* =========================
+   APPROVE MEMBERSHIP REQUEST
+========================= */
+
+async function approveMemberRequest(id){
+
+  const req=
+    adminRequests.find(
+      r=>Number(r.id)===Number(id)
+    );
+
+  if(!req) return;
+
+  if(
+    !confirm(
+      `Approve ${req.name} (${req.member_id}) as a verified member?`
+    )
+  ){
+    return;
+  }
+
+  message(
+    'requestAdminMessage',
+    'Approving membership request...'
+  );
+
+  const {error}=
+    await sb.rpc(
+      'approve_member_request',
+      {
+        request_id:Number(id)
+      }
+    );
+
+  if(error){
+
+    message(
+      'requestAdminMessage',
+      error.message,
+      'error'
+    );
+
+    return;
+  }
+
+  message(
+    'requestAdminMessage',
+    `${req.name} has been approved successfully.`,
+    'ok'
+  );
+
+  await loadAdmin();
+  await loadPublic();
 }
 
 
+/* =========================
+   REJECT MEMBERSHIP REQUEST
+========================= */
+
+async function rejectMemberRequest(id){
+
+  const req=
+    adminRequests.find(
+      r=>Number(r.id)===Number(id)
+    );
+
+  if(!req) return;
+
+  if(
+    !confirm(
+      `Reject the membership request from ${req.name} (${req.member_id})?`
+    )
+  ){
+    return;
+  }
+
+  message(
+    'requestAdminMessage',
+    'Rejecting membership request...'
+  );
+
+  const {error}=
+    await sb.rpc(
+      'reject_member_request',
+      {
+        request_id:Number(id)
+      }
+    );
+
+  if(error){
+
+    message(
+      'requestAdminMessage',
+      error.message,
+      'error'
+    );
+
+    return;
+  }
+
+  message(
+    'requestAdminMessage',
+    `${req.name}'s membership request was rejected.`,
+    'ok'
+  );
+
+  await loadAdmin();
+  await loadPublic();
+}
 /* =========================
    EDIT MEMBER
 ========================= */
