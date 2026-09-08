@@ -460,6 +460,10 @@
             Admin
           </option>
 
+          <option value="Co-Admin">
+            Co-Admin
+          </option>
+
           <option value="Vice Leader">
             Vice Leader
           </option>
@@ -617,6 +621,95 @@
 
       </form>
 
+<!-- =========================
+     EVENT FORM
+========================= -->
+
+<form
+  id="eventForm"
+  class="panel"
+>
+
+  <h3 id="eventFormTitle">
+    Add Event
+  </h3>
+
+
+  <input
+    type="hidden"
+    id="eventId"
+  >
+
+
+  <input
+    id="eventTitle"
+    placeholder="Event title"
+    required
+  >
+
+
+  <label>
+    Event Date
+  </label>
+
+  <input
+    id="eventDate"
+    type="date"
+  >
+
+
+  <label>
+    Event Time
+  </label>
+
+  <input
+    id="eventTime"
+    type="time"
+  >
+
+
+  <input
+    id="eventLocation"
+    placeholder="Event location"
+  >
+
+
+  <textarea
+    id="eventDescription"
+    placeholder="Event description"
+    rows="4"
+  ></textarea>
+
+
+  <div class="form-actions">
+
+    <button
+      class="btn"
+      id="eventSubmit"
+    >
+      Save Event
+    </button>
+
+    <button
+      type="button"
+      class="ghost-btn"
+      id="eventCancel"
+      hidden
+    >
+      Cancel Edit
+    </button>
+
+  </div>
+
+
+  <p
+    id="eventMessage"
+    class="form-message"
+    aria-live="polite"
+  ></p>
+
+</form>
+      
     </div>
 
 <!-- =========================
@@ -708,6 +801,42 @@
 
     </div>
 
+  <!-- =========================
+     EVENT RECORDS
+========================= -->
+
+<div class="panel admin-list">
+
+  <div class="section-head">
+
+    <div>
+
+      <p class="eyebrow">
+        COMMUNITY ACTIVITIES
+      </p>
+
+      <h3>
+        Event Records
+      </h3>
+
+      <p class="muted">
+        Add, edit, or remove upcoming Boys of M3 events.
+      </p>
+
+    </div>
+
+  </div>
+
+  <div id="adminEventList">
+
+    <p class="muted">
+      No events in the database yet.
+    </p>
+
+  </div>
+
+</div>
+    
   </div>
 
 </section>
