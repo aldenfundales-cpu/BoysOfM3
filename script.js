@@ -635,9 +635,9 @@ function renderEvents(){
         </h3>
 
         <p>
-          📅 ${formatDate(
-            e.event_date
-          )}
+         🗓 ${formatDate(
+  e.event_date
+)}
         </p>
 
         <p>
