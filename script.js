@@ -41,6 +41,81 @@ const formatDate = d =>
     : 'TBA';
 
 
+/* =========================
+   CLEAN SVG ICONS
+========================= */
+
+const iconSvg = (name, className='info-icon') => {
+
+  const icons = {
+
+    pin: `
+      <path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"/>
+      <circle cx="12" cy="10" r="2.3"/>
+    `,
+
+    crown: `
+      <path d="M3 8l4 3 5-6 5 6 4-3-2 10H5L3 8Z"/>
+      <path d="M5 21h14"/>
+    `,
+
+    star: `
+      <path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2 7.5 14 3 9.6l6.2-.9L12 3Z"/>
+    `,
+
+    shield: `
+      <path d="M12 3l7 3v5c0 4.6-2.8 7.9-7 10-4.2-2.1-7-5.4-7-10V6l7-3Z"/>
+      <path d="M9 12l2 2 4-4"/>
+    `,
+
+    bike: `
+      <circle cx="6" cy="17" r="3"/>
+      <circle cx="18" cy="17" r="3"/>
+      <path d="M6 17l4-7h4l4 7M9 10h5l2 3M11 7h3"/>
+    `,
+
+    badge: `
+      <circle cx="12" cy="9" r="5"/>
+      <path d="M9 14l-1 7 4-2 4 2-1-7"/>
+      <path d="M10 9l1.3 1.3L14 7.8"/>
+    `,
+
+    calendar: `
+      <rect x="3" y="5" width="18" height="16" rx="2"/>
+      <path d="M8 3v4M16 3v4M3 10h18"/>
+      <path d="M7 14h2M11 14h2M15 14h2M7 18h2M11 18h2M15 18h2"/>
+    `,
+
+    clock: `
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 7v5l3 2"/>
+    `,
+
+    users: `
+      <circle cx="9" cy="9" r="3"/>
+      <circle cx="17" cy="8" r="2.5"/>
+      <path d="M3.5 20c.5-4 2.5-6 5.5-6s5 2 5.5 6M14 14c2.8.2 4.8 2.1 5.3 5"/>
+    `
+  };
+
+  return `
+    <svg
+      class="${className}"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.9"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      ${icons[name] || ''}
+    </svg>
+  `;
+};
+
+
 let publicMembers = [];
 let publicZones = [];
 let publicEvents = [];
@@ -58,6 +133,7 @@ let selectedZone = '';
 ========================= */
 
 function showNotice(msg,type='info'){
+
   const el=$('setupNotice');
 
   if(!el) return;
@@ -69,6 +145,7 @@ function showNotice(msg,type='info'){
 
 
 function clearNotice(){
+
   const el=$('setupNotice');
 
   if(el){
@@ -78,6 +155,7 @@ function clearNotice(){
 
 
 function message(id,text,type=''){
+
   const el=$(id);
 
   if(!el) return;
@@ -209,10 +287,8 @@ function renderAll(){
   );
 
 
-  /* AUTOMATICALLY LOAD EXISTING ZONES
-     INTO MEMBER FORM DROPDOWN */
   populateMemberZoneDropdown();
-populateRequestZoneDropdown();
+  populateRequestZoneDropdown();
 
 
   if(selectedZone){
@@ -264,6 +340,7 @@ function populateMemberZoneDropdown(){
   }
 }
 
+
 /* =========================
    REQUEST ZONE DROPDOWN
 ========================= */
@@ -278,6 +355,7 @@ function populateRequestZoneDropdown(){
 
   select.innerHTML = `
     <option value="">Select Zone</option>
+
     ${publicZones.map(z => `
       <option value="${esc(z.name)}">
         ${esc(z.name)}
@@ -354,34 +432,35 @@ function renderZones(filter=''){
           </h3>
 
           <p>
-            📍 ${esc(z.location)}
+            ${iconSvg('pin')}
+            ${esc(z.location)}
           </p>
 
           <p>
-            👑
+            ${iconSvg('crown')}
             <b>Zone Leader:</b>
             ${esc(z.leader || 'TBA')}
           </p>
 
           <p>
-            ⭐
+            ${iconSvg('star')}
             <b>Vice Leader:</b>
-            ${esc(
-              z.vice_leader || 'TBA'
-            )}
+            ${esc(z.vice_leader || 'TBA')}
           </p>
 
           <p>
-  🛡️ <b>Admins:</b><br>
-  ${
-    z.admins && z.admins !== 'TBA'
-      ? z.admins
-          .split(',')
-          .map(admin => esc(admin.trim()))
-          .join('<br>')
-      : 'TBA'
-  }
-</p>
+            ${iconSvg('shield')}
+            <b>Admins:</b><br>
+
+            ${
+              z.admins && z.admins !== 'TBA'
+                ? z.admins
+                    .split(',')
+                    .map(admin => esc(admin.trim()))
+                    .join('<br>')
+                : 'TBA'
+            }
+          </p>
 
           <span class="tag">
             ${count} verified members
@@ -485,10 +564,12 @@ function renderMembers(filter=''){
 
     ).toLowerCase().includes(f));
 
+
   /* Sort members by badge number: lowest to highest */
-list.sort((a, b) => {
-  return Number(a.id) - Number(b.id);
-});
+
+  list.sort((a, b) => {
+    return Number(a.id) - Number(b.id);
+  });
 
 
   grid.innerHTML=
@@ -511,15 +592,18 @@ list.sort((a, b) => {
         </p>
 
         <p>
-          📍 ${esc(m.zone)}
+          ${iconSvg('pin')}
+          ${esc(m.zone)}
         </p>
 
         <p>
-          🏍️ ${esc(m.bike)}
+          ${iconSvg('bike')}
+          ${esc(m.bike)}
         </p>
 
         <p>
-          🎖️ ${esc(m.position)}
+          ${iconSvg('badge')}
+          ${esc(m.position)}
         </p>
 
       </article>
@@ -532,7 +616,6 @@ list.sort((a, b) => {
       No verified members found in this zone.
     </p>`;
 }
-
 
 /* =========================
    SHOW ZONE MEMBERS
@@ -635,19 +718,22 @@ function renderEvents(){
         </h3>
 
         <p>
-         🗓 ${formatDate(
-  e.event_date
-)}
+          ${iconSvg('calendar')}
+          ${formatDate(
+            e.event_date
+          )}
         </p>
 
         <p>
-          🕒 ${esc(
+          ${iconSvg('clock')}
+          ${esc(
             e.event_time || 'TBA'
           )}
         </p>
 
         <p>
-          📍 ${esc(
+          ${iconSvg('pin')}
+          ${esc(
             e.location || 'TBA'
           )}
         </p>
@@ -773,6 +859,7 @@ function resetZoneForm(){
   );
 }
 
+
 /* =========================
    RESET EVENT FORM
 ========================= */
@@ -786,29 +873,35 @@ function resetEventForm(){
     form.reset();
   }
 
+
   if($('eventId')){
     $('eventId').value='';
   }
+
 
   if($('eventFormTitle')){
     $('eventFormTitle').textContent=
       'Add Event';
   }
 
+
   if($('eventSubmit')){
     $('eventSubmit').textContent=
       'Save Event';
   }
 
+
   if($('eventCancel')){
     $('eventCancel').hidden=true;
   }
+
 
   message(
     'eventMessage',
     ''
   );
 }
+
 
 /* =========================
    ADMIN AUTH
@@ -881,12 +974,19 @@ function setLoggedOut(){
     $('loginPanel').hidden=false;
   }
 
+
   if($('dashboard')){
     $('dashboard').hidden=true;
   }
 
-  if($('adminEmail')){
-    $('adminEmail').textContent='';
+
+  if($('logoutBtn')){
+    $('logoutBtn').hidden=true;
+  }
+
+
+  if($('adminUser')){
+    $('adminUser').textContent='';
   }
 }
 
@@ -897,16 +997,23 @@ function setLoggedIn(user,admin){
     $('loginPanel').hidden=true;
   }
 
+
   if($('dashboard')){
     $('dashboard').hidden=false;
   }
 
-  if($('adminEmail')){
 
-    $('adminEmail').textContent=
+  if($('logoutBtn')){
+    $('logoutBtn').hidden=false;
+  }
+
+
+  if($('adminUser')){
+
+    $('adminUser').textContent=
       admin.email ||
       user.email ||
-      '';
+      'Administrator';
 
   }
 }
@@ -920,11 +1027,37 @@ async function loadAdmin(){
 
   if(!sb) return;
 
-  const [m,z,r,e] =
+
+  const [
+    membersResult,
+    zonesResult,
+    requestsResult,
+    eventsResult
+  ]=
   await Promise.all([
 
     sb
       .from('members')
+      .select(
+        'id,name,zone,bike,position,status,public_visible'
+      )
+      .order(
+        'name'
+      ),
+
+
+    sb
+      .from('zones')
+      .select(
+        'name,location,leader,vice_leader,admins'
+      )
+      .order(
+        'name'
+      ),
+
+
+    sb
+      .from('membership_requests')
       .select('*')
       .order(
         'created_at',
@@ -933,25 +1066,12 @@ async function loadAdmin(){
         }
       ),
 
-    sb
-      .from('zones')
-      .select('*')
-      .order('name'),
-
-    sb
-      .from('member_requests')
-      .select('*')
-      .eq('status','pending')
-      .order(
-        'submitted_at',
-        {
-          ascending:true
-        }
-      ),
 
     sb
       .from('events')
-      .select('*')
+      .select(
+        'id,title,event_date,event_time,location,description'
+      )
       .order(
         'event_date',
         {
@@ -963,638 +1083,707 @@ async function loadAdmin(){
   ]);
 
 
-  if(
-    m.error ||
-    z.error ||
-    r.error ||
-    e.error
-  ){
+  if(membersResult.error){
 
     console.error(
-      m.error ||
-      z.error ||
-      r.error ||
-      e.error
+      membersResult.error
     );
 
+  }else{
 
-    message(
-      'loginMessage',
-      'Could not load admin records. Check RLS policies.',
-      'error'
-    );
+    adminMembers=
+      membersResult.data || [];
 
-
-    return;
   }
 
 
-  adminMembers =
-    m.data || [];
+  if(zonesResult.error){
+
+    console.error(
+      zonesResult.error
+    );
+
+  }else{
+
+    adminZones=
+      zonesResult.data || [];
+
+  }
 
 
-  adminZones =
-    z.data || [];
+  if(requestsResult.error){
+
+    console.error(
+      requestsResult.error
+    );
+
+  }else{
+
+    adminRequests=
+      requestsResult.data || [];
+
+  }
 
 
-  adminRequests =
-    r.data || [];
+  if(eventsResult.error){
+
+    console.error(
+      eventsResult.error
+    );
+
+  }else{
+
+    adminEvents=
+      eventsResult.data || [];
+
+  }
 
 
-  adminEvents =
-    e.data || [];
-
+  renderAdmin();
 
   populateMemberZoneDropdown();
+}
 
-  renderAdminLists();
+
+/* =========================
+   RENDER ADMIN
+========================= */
+
+function renderAdmin(){
+
+  renderAdminMembers();
+
+  renderAdminZones();
+
+  renderRequests();
+
+  renderAdminEvents();
 }
 
 /* =========================
-   ADMIN LISTS
+   ADMIN MEMBERS
 ========================= */
 
-function renderAdminLists(){
+function renderAdminMembers(){
 
-  const memberList=
+  const box=
     $('adminMemberList');
 
-  const zoneList=
+  if(!box) return;
+
+
+  const list=
+    [...adminMembers].sort(
+      (a,b)=>
+        Number(a.id) -
+        Number(b.id)
+    );
+
+
+  box.innerHTML=
+    list.map(m=>`
+
+      <div class="admin-row">
+
+        <div>
+
+          <strong>
+            ${esc(m.id)} —
+            ${esc(m.name)}
+          </strong>
+
+          <br>
+
+          <small>
+            ${iconSvg('pin')}
+            ${esc(m.zone || 'No zone')}
+            &nbsp; • &nbsp;
+            ${iconSvg('bike')}
+            ${esc(m.bike || 'Mio i 125')}
+            &nbsp; • &nbsp;
+            ${iconSvg('badge')}
+            ${esc(m.position || 'Member')}
+          </small>
+
+          <br>
+
+          <small>
+            Status:
+            ${esc(m.status || 'pending')}
+            &nbsp; • &nbsp;
+            Public:
+            ${m.public_visible ? 'Yes' : 'No'}
+          </small>
+
+        </div>
+
+
+        <div class="row-actions">
+
+          <button
+            class="ghost-btn edit-member"
+            type="button"
+            data-id="${esc(m.id)}"
+          >
+            Edit
+          </button>
+
+          <button
+            class="danger small delete-member"
+            type="button"
+            data-id="${esc(m.id)}"
+          >
+            Delete
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join('')
+
+    ||
+
+    `<p class="muted">
+      No members found.
+    </p>`;
+
+
+  document
+    .querySelectorAll(
+      '.edit-member'
+    )
+    .forEach(btn=>{
+
+      btn.onclick=()=>{
+
+        editMember(
+          btn.dataset.id
+        );
+
+      };
+
+    });
+
+
+  document
+    .querySelectorAll(
+      '.delete-member'
+    )
+    .forEach(btn=>{
+
+      btn.onclick=()=>{
+
+        deleteMember(
+          btn.dataset.id
+        );
+
+      };
+
+    });
+}
+
+
+/* =========================
+   ADMIN ZONES
+========================= */
+
+function renderAdminZones(){
+
+  const box=
     $('adminZoneList');
-  
-  const requestList=
-  $('adminRequestList');
 
-  const eventList=
-  $('adminEventList');
+  if(!box) return;
 
-  
-  if(requestList){
 
-  requestList.innerHTML=
+  box.innerHTML=
+    adminZones.map(z=>`
 
-    adminRequests.length
+      <div class="admin-row">
 
-    ?
+        <div>
 
-    `<div class="admin-table">
+          <strong>
+            ${esc(z.name)}
+          </strong>
 
-      ${adminRequests.map(r=>`
+          <br>
+
+          <small>
+            ${iconSvg('pin')}
+            ${esc(z.location || 'TBA')}
+          </small>
+
+          <br>
+
+          <small>
+            ${iconSvg('crown')}
+            Zone Leader:
+            ${esc(z.leader || 'TBA')}
+          </small>
+
+          <br>
+
+          <small>
+            ${iconSvg('star')}
+            Vice Leader:
+            ${esc(z.vice_leader || 'TBA')}
+          </small>
+
+          <br>
+
+          <small>
+            ${iconSvg('shield')}
+            Admins:
+            ${esc(z.admins || 'TBA')}
+          </small>
+
+        </div>
+
+
+        <div class="row-actions">
+
+          <button
+            class="ghost-btn edit-zone"
+            type="button"
+            data-name="${esc(z.name)}"
+          >
+            Edit
+          </button>
+
+          <button
+            class="danger small delete-zone"
+            type="button"
+            data-name="${esc(z.name)}"
+          >
+            Delete
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join('')
+
+    ||
+
+    `<p class="muted">
+      No zones found.
+    </p>`;
+
+
+  document
+    .querySelectorAll(
+      '.edit-zone'
+    )
+    .forEach(btn=>{
+
+      btn.onclick=()=>{
+
+        editZone(
+          btn.dataset.name
+        );
+
+      };
+
+    });
+
+
+  document
+    .querySelectorAll(
+      '.delete-zone'
+    )
+    .forEach(btn=>{
+
+      btn.onclick=()=>{
+
+        deleteZone(
+          btn.dataset.name
+        );
+
+      };
+
+    });
+}
+
+
+/* =========================
+   MEMBERSHIP REQUESTS
+========================= */
+
+function renderRequests(){
+
+  const box=
+    $('requestList');
+
+  if(!box) return;
+
+
+  box.innerHTML=
+    adminRequests.map(r=>{
+
+      const requestId=
+        r.id ?? '';
+
+
+      return `
 
         <div class="admin-row">
 
           <div>
 
             <strong>
-              ${esc(r.member_id)}
+              ${esc(r.name || 'Unnamed Applicant')}
             </strong>
-
-            · ${esc(r.name)}
 
             <br>
 
             <small>
-              📍 ${esc(r.zone)}
-              ·
-              🏍️ ${esc(r.bike)}
+              ${iconSvg('pin')}
+              ${esc(r.zone || 'No zone')}
             </small>
 
+            <br>
+
+            <small>
+              ${iconSvg('bike')}
+              ${esc(r.bike || 'Mio i 125')}
+            </small>
+
+            ${
+              r.contact
+                ?
+                `
+                <br>
+                <small>
+                  Contact:
+                  ${esc(r.contact)}
+                </small>
+                `
+                :
+                ''
+            }
+
+            ${
+              r.message
+                ?
+                `
+                <br>
+                <small>
+                  ${esc(r.message)}
+                </small>
+                `
+                :
+                ''
+            }
+
+            ${
+              r.status
+                ?
+                `
+                <br>
+                <small>
+                  Status:
+                  ${esc(r.status)}
+                </small>
+                `
+                :
+                ''
+            }
+
           </div>
+
 
           <div class="row-actions">
 
             <button
-              class="btn small"
-              data-approve-request="${r.id}"
+              class="ghost-btn approve-request"
+              type="button"
+              data-id="${esc(requestId)}"
             >
               Approve
             </button>
 
             <button
-              class="danger small"
-              data-reject-request="${r.id}"
+              class="danger small delete-request"
+              type="button"
+              data-id="${esc(requestId)}"
             >
-              Reject
+              Delete
             </button>
 
           </div>
 
         </div>
 
-      `).join('')}
+      `;
 
-    </div>`
+    }).join('')
 
-    :
+    ||
 
     `<p class="muted">
-      No pending membership requests.
+      No membership requests.
     </p>`;
 
-}
 
-  if(memberList){
+  document
+    .querySelectorAll(
+      '.approve-request'
+    )
+    .forEach(btn=>{
 
-    memberList.innerHTML=
+      btn.onclick=()=>{
 
-      adminMembers.length
+        approveRequest(
+          btn.dataset.id
+        );
 
-      ?
+      };
 
-      `<div class="admin-table">
-
-        ${adminMembers.map(m=>`
-
-          <div class="admin-row">
-
-            <div>
-
-              <strong>
-                ${esc(m.id)}
-              </strong>
-
-              · ${esc(m.name)}
-
-              <br>
-
-              <small>
-
-                ${esc(m.zone)}
-                ·
-                ${esc(m.position)}
-                ·
-                ${esc(m.status)}
-                ·
-                ${
-                  m.public_visible
-                  ? 'Public'
-                  : 'Hidden'
-                }
-
-              </small>
-
-            </div>
-
-
-            <div class="row-actions">
-
-              <button
-                class="ghost-btn"
-                data-edit-member="${esc(m.id)}"
-              >
-                Edit
-              </button>
-
-              <button
-                class="danger small"
-                data-delete-member="${esc(m.id)}"
-              >
-                Delete
-              </button>
-
-            </div>
-
-          </div>
-
-        `).join('')}
-
-      </div>`
-
-      :
-
-      `<p class="muted">
-        No members in the database yet.
-      </p>`;
-
-  }
-
-    if(zoneList){
-
-    zoneList.innerHTML=
-
-      adminZones.length
-
-      ?
-
-      `<div class="admin-table">
-
-        ${adminZones.map(z=>`
-
-          <div class="admin-row">
-
-            <div>
-
-              <strong>
-                ${esc(z.name)}
-              </strong>
-
-              <br>
-
-              <small>
-
-                ${esc(z.location)}
-
-                <br>
-
-                Zone Leader:
-                ${esc(
-                  z.leader || '—'
-                )}
-
-                <br>
-
-                Vice Leader:
-                ${esc(
-                  z.vice_leader || '—'
-                )}
-
-                <br>
-
-                Admins:
-                ${esc(
-                  z.admins || '—'
-                )}
-
-              </small>
-
-            </div>
-
-
-            <div class="row-actions">
-
-              <button
-                class="ghost-btn"
-                data-edit-zone="${esc(z.name)}"
-              >
-                Edit
-              </button>
-
-              <button
-                class="danger small"
-                data-delete-zone="${esc(z.name)}"
-              >
-                Delete
-              </button>
-
-            </div>
-
-          </div>
-
-        `).join('')}
-
-      </div>`
-
-      :
-
-      `<p class="muted">
-        No zones in the database yet.
-      </p>`;
-
-  }
-   
-  if(eventList){
-
-    eventList.innerHTML=
-
-      adminEvents.length
-
-      ?
-
-      `<div class="admin-table">
-
-        ${adminEvents.map(e=>`
-
-          <div class="admin-row">
-
-            <div>
-
-              <strong>
-                ${esc(e.title)}
-              </strong>
-
-              <br>
-
-              <small>
-
-                📅 ${formatDate(e.event_date)}
-                ·
-                🕒 ${esc(e.event_time || 'TBA')}
-                ·
-                📍 ${esc(e.location || 'TBA')}
-
-              </small>
-
-            </div>
-
-
-            <div class="row-actions">
-
-              <button
-                class="ghost-btn"
-                data-edit-event="${e.id}"
-              >
-                Edit
-              </button>
-
-              <button
-                class="danger small"
-                data-delete-event="${e.id}"
-              >
-                Delete
-              </button>
-
-            </div>
-
-          </div>
-
-        `).join('')}
-
-      </div>`
-
-      :
-
-      `<p class="muted">
-        No events in the database yet.
-      </p>`;
-
-  }
+    });
 
 
   document
     .querySelectorAll(
-      '[data-edit-member]'
+      '.delete-request'
     )
-    .forEach(
-      b=>
-        b.onclick=()=>
-          editMember(
-            b.dataset.editMember
-          )
-    );
+    .forEach(btn=>{
 
+      btn.onclick=()=>{
 
-  document
-    .querySelectorAll(
-      '[data-delete-member]'
-    )
-    .forEach(
-      b=>
-        b.onclick=()=>
-          deleteMember(
-            b.dataset.deleteMember
-          )
-    );
+        deleteRequest(
+          btn.dataset.id
+        );
 
+      };
 
-  document
-    .querySelectorAll(
-      '[data-edit-zone]'
-    )
-    .forEach(
-      b=>
-        b.onclick=()=>
-          editZone(
-            b.dataset.editZone
-          )
-    );
-
-
-  document
-    .querySelectorAll(
-      '[data-delete-zone]'
-    )
-    .forEach(
-      b=>
-        b.onclick=()=>
-          deleteZone(
-            b.dataset.deleteZone
-          )
-    );
-    document
-    .querySelectorAll(
-      '[data-edit-event]'
-    )
-    .forEach(
-      b=>
-        b.onclick=()=>
-          editEvent(
-            Number(
-              b.dataset.editEvent
-            )
-          )
-    );
-
-
-  document
-    .querySelectorAll(
-      '[data-delete-event]'
-    )
-    .forEach(
-      b=>
-        b.onclick=()=>
-          deleteEvent(
-            Number(
-              b.dataset.deleteEvent
-            )
-          )
-    );
-document
-  .querySelectorAll(
-    '[data-approve-request]'
-  )
-  .forEach(
-    b=>
-      b.onclick=()=>
-        approveMemberRequest(
-          Number(
-            b.dataset.approveRequest
-          )
-        )
-  );
-
-
-document
-  .querySelectorAll(
-    '[data-reject-request]'
-  )
-  .forEach(
-    b=>
-      b.onclick=()=>
-        rejectMemberRequest(
-          Number(
-            b.dataset.rejectRequest
-          )
-        )
-  );
-}
-
-/* =========================
-   APPROVE MEMBERSHIP REQUEST
-========================= */
-
-async function approveMemberRequest(id){
-
-  const req=
-    adminRequests.find(
-      r=>Number(r.id)===Number(id)
-    );
-
-  if(!req) return;
-
-  if(
-    !confirm(
-      `Approve ${req.name} (${req.member_id}) as a verified member?`
-    )
-  ){
-    return;
-  }
-
-  message(
-    'requestAdminMessage',
-    'Approving membership request...'
-  );
-
-  const {error}=
-    await sb.rpc(
-      'approve_member_request',
-      {
-        request_id:Number(id)
-      }
-    );
-
-  if(error){
-
-    message(
-      'requestAdminMessage',
-      error.message,
-      'error'
-    );
-
-    return;
-  }
-
-  message(
-    'requestAdminMessage',
-    `${req.name} has been approved successfully.`,
-    'ok'
-  );
-
-  await loadAdmin();
-  await loadPublic();
+    });
 }
 
 
 /* =========================
-   REJECT MEMBERSHIP REQUEST
+   ADMIN EVENTS
 ========================= */
 
-async function rejectMemberRequest(id){
+function renderAdminEvents(){
 
-  const req=
-    adminRequests.find(
-      r=>Number(r.id)===Number(id)
-    );
+  const box=
+    $('adminEventList');
 
-  if(!req) return;
+  if(!box) return;
 
-  if(
-    !confirm(
-      `Reject the membership request from ${req.name} (${req.member_id})?`
+
+  box.innerHTML=
+    adminEvents.map(e=>`
+
+      <div class="admin-row">
+
+        <div>
+
+          <strong>
+            ${esc(e.title)}
+          </strong>
+
+          <br>
+
+          <small>
+            ${iconSvg('calendar')}
+            ${formatDate(e.event_date)}
+          </small>
+
+          <br>
+
+          <small>
+            ${iconSvg('clock')}
+            ${esc(e.event_time || 'TBA')}
+          </small>
+
+          <br>
+
+          <small>
+            ${iconSvg('pin')}
+            ${esc(e.location || 'TBA')}
+          </small>
+
+          ${
+            e.description
+              ?
+              `
+              <br>
+              <small>
+                ${esc(e.description)}
+              </small>
+              `
+              :
+              ''
+          }
+
+        </div>
+
+
+        <div class="row-actions">
+
+          <button
+            class="ghost-btn edit-event"
+            type="button"
+            data-id="${esc(e.id)}"
+          >
+            Edit
+          </button>
+
+          <button
+            class="danger small delete-event"
+            type="button"
+            data-id="${esc(e.id)}"
+          >
+            Delete
+          </button>
+
+        </div>
+
+      </div>
+
+    `).join('')
+
+    ||
+
+    `<p class="muted">
+      No events found.
+    </p>`;
+
+
+  document
+    .querySelectorAll(
+      '.edit-event'
     )
-  ){
-    return;
-  }
+    .forEach(btn=>{
 
-  message(
-    'requestAdminMessage',
-    'Rejecting membership request...'
-  );
+      btn.onclick=()=>{
 
-  const {error}=
-    await sb.rpc(
-      'reject_member_request',
-      {
-        request_id:Number(id)
-      }
-    );
+        editEvent(
+          btn.dataset.id
+        );
 
-  if(error){
+      };
 
-    message(
-      'requestAdminMessage',
-      error.message,
-      'error'
-    );
+    });
 
-    return;
-  }
 
-  message(
-    'requestAdminMessage',
-    `${req.name}'s membership request was rejected.`,
-    'ok'
-  );
+  document
+    .querySelectorAll(
+      '.delete-event'
+    )
+    .forEach(btn=>{
 
-  await loadAdmin();
-  await loadPublic();
+      btn.onclick=()=>{
+
+        deleteEvent(
+          btn.dataset.id
+        );
+
+      };
+
+    });
 }
+
+
 /* =========================
    EDIT MEMBER
 ========================= */
 
 function editMember(id){
 
-  const m=
+  const member=
     adminMembers.find(
-      x=>x.id===id
+      m=>String(m.id)===String(id)
     );
 
 
-  if(!m) return;
+  if(!member) return;
 
 
-  populateMemberZoneDropdown();
+  if($('memberOriginalId')){
+    $('memberOriginalId').value=
+      member.id ?? '';
+  }
 
 
-  $('memberOriginalId').value=
-    m.id;
-
-  $('memberId').value=
-    m.id;
-
-  $('memberName').value=
-    m.name;
-
-  $('memberZone').value=
-    m.zone;
-
-  $('memberBike').value=
-    m.bike;
-
-  $('memberPosition').value=
-    m.position;
-
-  $('memberStatus').value=
-    m.status;
-
-  $('memberPublic').checked=
-    m.public_visible;
+  if($('memberId')){
+    $('memberId').value=
+      member.id ?? '';
+  }
 
 
-  $('memberFormTitle').textContent=
-    'Edit Member';
-
-  $('memberSubmit').textContent=
-    'Update Member';
-
-  $('memberCancel').hidden=
-    false;
+  if($('memberName')){
+    $('memberName').value=
+      member.name || '';
+  }
 
 
-  $('memberForm').scrollIntoView({
-    behavior:'smooth',
-    block:'center'
-  });
+  if($('memberZone')){
+    $('memberZone').value=
+      member.zone || '';
+  }
+
+
+  if($('memberBike')){
+    $('memberBike').value=
+      member.bike || 'Mio i 125';
+  }
+
+
+  if($('memberPosition')){
+    $('memberPosition').value=
+      member.position || 'Member';
+  }
+
+
+  if($('memberStatus')){
+    $('memberStatus').value=
+      member.status || 'verified';
+  }
+
+
+  if($('memberPublic')){
+    $('memberPublic').checked=
+      member.public_visible !== false;
+  }
+
+
+  if($('memberFormTitle')){
+    $('memberFormTitle').textContent=
+      'Edit Member';
+  }
+
+
+  if($('memberSubmit')){
+    $('memberSubmit').textContent=
+      'Update Member';
+  }
+
+
+  if($('memberCancel')){
+    $('memberCancel').hidden=false;
+  }
+
+
+  message(
+    'memberMessage',
+    ''
+  );
+
+
+  const form=$('memberForm');
+
+  if(form){
+
+    form.scrollIntoView({
+      behavior:'smooth',
+      block:'center'
+    });
+
+  }
 }
 
 
@@ -1604,43 +1793,74 @@ function editMember(id){
 
 function editZone(name){
 
-  const z=
+  const zone=
     adminZones.find(
-      x=>x.name===name
+      z=>z.name===name
     );
 
 
-  if(!z) return;
+  if(!zone) return;
 
 
-  $('zoneOriginalName').value=
-    z.name;
-
-  $('zoneName').value=
-    z.name;
-
-  $('zoneLocation').value=
-    z.location;
-
-  $('zoneLeader').value=
-    z.leader || '';
-
-  $('zoneViceLeader').value=
-    z.vice_leader || '';
-
-  $('zoneAdmins').value=
-    z.admins || '';
+  if($('zoneOriginalName')){
+    $('zoneOriginalName').value=
+      zone.name || '';
+  }
 
 
-  $('zoneCancel').hidden=
-    false;
+  if($('zoneName')){
+    $('zoneName').value=
+      zone.name || '';
+  }
 
 
-  $('zoneForm').scrollIntoView({
-    behavior:'smooth',
-    block:'center'
-  });
+  if($('zoneLocation')){
+    $('zoneLocation').value=
+      zone.location || '';
+  }
+
+
+  if($('zoneLeader')){
+    $('zoneLeader').value=
+      zone.leader || '';
+  }
+
+
+  if($('zoneViceLeader')){
+    $('zoneViceLeader').value=
+      zone.vice_leader || '';
+  }
+
+
+  if($('zoneAdmins')){
+    $('zoneAdmins').value=
+      zone.admins || '';
+  }
+
+
+  if($('zoneCancel')){
+    $('zoneCancel').hidden=false;
+  }
+
+
+  message(
+    'zoneMessage',
+    ''
+  );
+
+
+  const form=$('zoneForm');
+
+  if(form){
+
+    form.scrollIntoView({
+      behavior:'smooth',
+      block:'center'
+    });
+
+  }
 }
+
 
 /* =========================
    EDIT EVENT
@@ -1648,33 +1868,49 @@ function editZone(name){
 
 function editEvent(id){
 
-  const e=
+  const event=
     adminEvents.find(
-      x=>
-        Number(x.id)===
-        Number(id)
+      e=>String(e.id)===String(id)
     );
 
-  if(!e) return;
+
+  if(!event) return;
 
 
-  $('eventId').value=
-    e.id;
+  if($('eventId')){
+    $('eventId').value=
+      event.id ?? '';
+  }
 
-  $('eventTitle').value=
-    e.title || '';
 
-  $('eventDate').value=
-    e.event_date || '';
+  if($('eventTitle')){
+    $('eventTitle').value=
+      event.title || '';
+  }
 
-  $('eventTime').value=
-    e.event_time || '';
 
-  $('eventLocation').value=
-    e.location || '';
+  if($('eventDate')){
+    $('eventDate').value=
+      event.event_date || '';
+  }
 
-  $('eventDescription').value=
-    e.description || '';
+
+  if($('eventTime')){
+    $('eventTime').value=
+      event.event_time || '';
+  }
+
+
+  if($('eventLocation')){
+    $('eventLocation').value=
+      event.location || '';
+  }
+
+
+  if($('eventDescription')){
+    $('eventDescription').value=
+      event.description || '';
+  }
 
 
   if($('eventFormTitle')){
@@ -1682,22 +1918,35 @@ function editEvent(id){
       'Edit Event';
   }
 
+
   if($('eventSubmit')){
     $('eventSubmit').textContent=
       'Update Event';
   }
+
 
   if($('eventCancel')){
     $('eventCancel').hidden=false;
   }
 
 
-  $('eventForm').scrollIntoView({
-    behavior:'smooth',
-    block:'center'
-  });
-}
+  message(
+    'eventMessage',
+    ''
+  );
 
+
+  const form=$('eventForm');
+
+  if(form){
+
+    form.scrollIntoView({
+      behavior:'smooth',
+      block:'center'
+    });
+
+  }
+}
 
 /* =========================
    DELETE MEMBER
@@ -1705,26 +1954,42 @@ function editEvent(id){
 
 async function deleteMember(id){
 
-  if(
-    !confirm(
-      `Delete member ${id}? This cannot be undone.`
-    )
-  ){
-    return;
-  }
+  if(!sb) return;
 
 
-  const {error}=
-    await sb
-      .from('members')
-      .delete()
-      .eq('id',id);
+  const member=
+    adminMembers.find(
+      m=>String(m.id)===String(id)
+    );
+
+
+  if(!member) return;
+
+
+  const confirmed=
+    confirm(
+      `Delete ${member.name} (${member.id})?`
+    );
+
+
+  if(!confirmed) return;
+
+
+  const {
+    error
+  }=
+  await sb
+    .from('members')
+    .delete()
+    .eq('id',id);
 
 
   if(error){
 
+    console.error(error);
+
     alert(
-      error.message
+      `Could not delete member: ${error.message}`
     );
 
     return;
@@ -1742,26 +2007,33 @@ async function deleteMember(id){
 
 async function deleteZone(name){
 
-  if(
-    !confirm(
-      `Delete zone ${name}?`
-    )
-  ){
-    return;
-  }
+  if(!sb) return;
 
 
-  const {error}=
-    await sb
-      .from('zones')
-      .delete()
-      .eq('name',name);
+  const confirmed=
+    confirm(
+      `Delete zone "${name}"?`
+    );
+
+
+  if(!confirmed) return;
+
+
+  const {
+    error
+  }=
+  await sb
+    .from('zones')
+    .delete()
+    .eq('name',name);
 
 
   if(error){
 
+    console.error(error);
+
     alert(
-      error.message
+      `Could not delete zone: ${error.message}`
     );
 
     return;
@@ -1771,6 +2043,7 @@ async function deleteZone(name){
   await loadAdmin();
   await loadPublic();
 }
+
 
 /* =========================
    DELETE EVENT
@@ -1778,29 +2051,157 @@ async function deleteZone(name){
 
 async function deleteEvent(id){
 
-  if(
-    !confirm(
-      'Delete this event? This cannot be undone.'
-    )
-  ){
-    return;
-  }
+  if(!sb) return;
 
 
-  const {error}=
-    await sb
-      .from('events')
-      .delete()
-      .eq('id',id);
+  const event=
+    adminEvents.find(
+      e=>String(e.id)===String(id)
+    );
+
+
+  if(!event) return;
+
+
+  const confirmed=
+    confirm(
+      `Delete event "${event.title}"?`
+    );
+
+
+  if(!confirmed) return;
+
+
+  const {
+    error
+  }=
+  await sb
+    .from('events')
+    .delete()
+    .eq('id',id);
 
 
   if(error){
 
+    console.error(error);
+
     alert(
-      error.message
+      `Could not delete event: ${error.message}`
     );
 
     return;
+  }
+
+
+  resetEventForm();
+
+  await loadAdmin();
+  await loadPublic();
+}
+
+
+/* =========================
+   APPROVE MEMBERSHIP REQUEST
+========================= */
+
+async function approveRequest(id){
+
+  if(!sb) return;
+
+
+  const request=
+    adminRequests.find(
+      r=>String(r.id)===String(id)
+    );
+
+
+  if(!request) return;
+
+
+  const confirmed=
+    confirm(
+      `Approve membership request from ${request.name}?`
+    );
+
+
+  if(!confirmed) return;
+
+
+  const memberData={
+
+    name:
+      request.name || '',
+
+    zone:
+      request.zone || '',
+
+    bike:
+      request.bike || 'Mio i 125',
+
+    position:
+      'Member',
+
+    status:
+      'verified',
+
+    public_visible:
+      true
+
+  };
+
+
+  /*
+    If your membership request already contains
+    a requested member/badge ID, use it.
+  */
+
+  if(
+    request.member_id !== undefined &&
+    request.member_id !== null &&
+    request.member_id !== ''
+  ){
+
+    memberData.id=
+      request.member_id;
+
+  }
+
+
+  const {
+    error:memberError
+  }=
+  await sb
+    .from('members')
+    .insert(memberData);
+
+
+  if(memberError){
+
+    console.error(memberError);
+
+    alert(
+      `Could not approve request: ${memberError.message}`
+    );
+
+    return;
+  }
+
+
+  const {
+    error:requestError
+  }=
+  await sb
+    .from('membership_requests')
+    .update({
+      status:'approved'
+    })
+    .eq('id',id);
+
+
+  if(requestError){
+
+    console.error(requestError);
+
   }
 
 
@@ -1810,36 +2211,54 @@ async function deleteEvent(id){
 
 
 /* =========================
-   PUBLIC SEARCH
+   DELETE MEMBERSHIP REQUEST
 ========================= */
 
-if($('zoneSearch')){
+async function deleteRequest(id){
 
-  $('zoneSearch').oninput=
-    e=>
-      renderZones(
-        e.target.value
-      );
-
-}
+  if(!sb) return;
 
 
-if($('memberSearch')){
-
-  $('memberSearch').oninput=
-    e=>
-      renderMembers(
-        e.target.value
-      );
-
-}
+  const request=
+    adminRequests.find(
+      r=>String(r.id)===String(id)
+    );
 
 
-if($('closeMembers')){
+  if(!request) return;
 
-  $('closeMembers').onclick=
-    closeZoneMembers;
 
+  const confirmed=
+    confirm(
+      `Delete membership request from ${request.name || 'this applicant'}?`
+    );
+
+
+  if(!confirmed) return;
+
+
+  const {
+    error
+  }=
+  await sb
+    .from('membership_requests')
+    .delete()
+    .eq('id',id);
+
+
+  if(error){
+
+    console.error(error);
+
+    alert(
+      `Could not delete request: ${error.message}`
+    );
+
+    return;
+  }
+
+
+  await loadAdmin();
 }
 
 
@@ -1847,144 +2266,1065 @@ if($('closeMembers')){
    VERIFY MEMBER
 ========================= */
 
-if($('verifyBtn')){
+async function verifyMember(){
 
-  $('verifyBtn').onclick=
-    async()=>{
-
-
-      const id=
-        $('verifyInput')
-          .value
-          .trim();
+  const input=
+    $('verifyInput');
 
 
-      const r=
-        $('verifyResult');
+  const result=
+    $('verifyResult');
 
 
-      if(!id){
-
-        r.className=
-          'result bad';
-
-        r.innerHTML=
-          'Please enter a member ID.';
-
-        return;
-      }
+  if(
+    !input ||
+    !result
+  ) return;
 
 
-      if(!sb){
-
-        r.className=
-          'result bad';
-
-        r.innerHTML=
-          'Database is not connected yet.';
-
-        return;
-      }
+  const id=
+    input.value.trim();
 
 
-      const {
-        data,
-        error
-      }=
+  if(!id){
+
+    result.className=
+      'result bad';
+
+    result.innerHTML=
+      'Enter a member ID.';
+
+    return;
+  }
+
+
+  if(!sb){
+
+    result.className=
+      'result bad';
+
+    result.innerHTML=
+      'Database is not connected.';
+
+    return;
+  }
+
+
+  result.className=
+    'result';
+
+  result.innerHTML=
+    'Checking member...';
+
+
+  const {
+    data,
+    error
+  }=
+  await sb
+    .from('members')
+    .select(
+      'id,name,zone,bike,position,status'
+    )
+    .eq('id',id)
+    .eq('status','verified')
+    .maybeSingle();
+
+
+  if(
+    error ||
+    !data
+  ){
+
+    result.className=
+      'result bad';
+
+    result.innerHTML=`
+      <strong>
+        Member not found
+      </strong>
+      <br>
+      The ID you entered is not currently verified.
+    `;
+
+    return;
+  }
+
+
+  result.className=
+    'result ok';
+
+
+  result.innerHTML=`
+
+    <strong>
+      ✓ VERIFIED MEMBER
+    </strong>
+
+    <br><br>
+
+    <b>
+      ${esc(data.name)}
+    </b>
+
+    <br>
+
+    Member ID:
+    ${esc(data.id)}
+
+    <br>
+
+    ${iconSvg('pin')}
+    ${esc(data.zone || 'No zone')}
+
+    <br>
+
+    ${iconSvg('bike')}
+    ${esc(data.bike || 'Mio i 125')}
+
+    <br>
+
+    ${iconSvg('badge')}
+    ${esc(data.position || 'Member')}
+
+  `;
+}
+
+
+/* =========================
+   LOGIN
+========================= */
+
+async function loginAdmin(e){
+
+  e.preventDefault();
+
+
+  if(!sb){
+
+    message(
+      'loginMessage',
+      'Supabase is not connected.',
+      'error'
+    );
+
+    return;
+  }
+
+
+  const email=
+    $('adminEmail')
+      ? $('adminEmail').value.trim()
+      : '';
+
+
+  const password=
+    $('adminPassword')
+      ? $('adminPassword').value
+      : '';
+
+
+  if(
+    !email ||
+    !password
+  ){
+
+    message(
+      'loginMessage',
+      'Enter your email and password.',
+      'error'
+    );
+
+    return;
+  }
+
+
+  message(
+    'loginMessage',
+    'Signing in...'
+  );
+
+
+  const {
+    data,
+    error
+  }=
+  await sb.auth.signInWithPassword({
+    email,
+    password
+  });
+
+
+  if(error){
+
+    message(
+      'loginMessage',
+      error.message,
+      'error'
+    );
+
+    return;
+  }
+
+
+  const user=
+    data.user;
+
+
+  const {
+    data:admin,
+    error:adminError
+  }=
+  await sb
+    .from('admins')
+    .select(
+      'user_id,email'
+    )
+    .eq(
+      'user_id',
+      user.id
+    )
+    .maybeSingle();
+
+
+  if(
+    adminError ||
+    !admin
+  ){
+
+    await sb.auth.signOut();
+
+
+    message(
+      'loginMessage',
+      'This account is not authorized as a BOM3 administrator.',
+      'error'
+    );
+
+
+    return;
+  }
+
+
+  message(
+    'loginMessage',
+    ''
+  );
+
+
+  setLoggedIn(
+    user,
+    admin
+  );
+
+
+  await loadAdmin();
+}
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+async function logoutAdmin(){
+
+  if(!sb) return;
+
+
+  await sb.auth.signOut();
+
+
+  setLoggedOut();
+
+
+  adminMembers=[];
+  adminZones=[];
+  adminRequests=[];
+  adminEvents=[];
+
+
+  resetMemberForm();
+  resetZoneForm();
+  resetEventForm();
+}
+
+
+/* =========================
+   SAVE MEMBER
+========================= */
+
+async function saveMember(e){
+
+  e.preventDefault();
+
+
+  if(!sb) return;
+
+
+  const originalId=
+    $('memberOriginalId')
+      ? $('memberOriginalId').value.trim()
+      : '';
+
+
+  const id=
+    $('memberId')
+      ? $('memberId').value.trim()
+      : '';
+
+
+  const name=
+    $('memberName')
+      ? $('memberName').value.trim()
+      : '';
+
+
+  const zone=
+    $('memberZone')
+      ? $('memberZone').value.trim()
+      : '';
+
+
+  const bike=
+    $('memberBike')
+      ? $('memberBike').value.trim()
+      : 'Mio i 125';
+
+
+  const position=
+    $('memberPosition')
+      ? $('memberPosition').value.trim()
+      : 'Member';
+
+
+  const status=
+    $('memberStatus')
+      ? $('memberStatus').value.trim()
+      : 'verified';
+
+
+  const publicVisible=
+    $('memberPublic')
+      ? $('memberPublic').checked
+      : true;
+
+
+  if(
+    !id ||
+    !name ||
+    !zone
+  ){
+
+    message(
+      'memberMessage',
+      'Member ID, name and zone are required.',
+      'error'
+    );
+
+    return;
+  }
+
+
+  const payload={
+
+    id,
+    name,
+    zone,
+
+    bike:
+      bike || 'Mio i 125',
+
+    position:
+      position || 'Member',
+
+    status:
+      status || 'verified',
+
+    public_visible:
+      publicVisible
+
+  };
+
+
+  message(
+    'memberMessage',
+    originalId
+      ? 'Updating member...'
+      : 'Saving member...'
+  );
+
+
+  let result;
+
+
+  if(originalId){
+
+    result=
       await sb
         .from('members')
-        .select(
-          'id,name,zone,bike,position,status'
-        )
+        .update(payload)
         .eq(
           'id',
-          id
-        )
+          originalId
+        );
+
+  }else{
+
+    result=
+      await sb
+        .from('members')
+        .insert(payload);
+
+  }
+
+
+  if(result.error){
+
+    console.error(
+      result.error
+    );
+
+
+    message(
+      'memberMessage',
+      result.error.message,
+      'error'
+    );
+
+
+    return;
+  }
+
+
+  message(
+    'memberMessage',
+    originalId
+      ? 'Member updated successfully.'
+      : 'Member added successfully.',
+    'ok'
+  );
+
+
+  await loadAdmin();
+  await loadPublic();
+
+
+  setTimeout(
+    resetMemberForm,
+    700
+  );
+}
+
+/* =========================
+   SAVE ZONE
+========================= */
+
+async function saveZone(e){
+
+  e.preventDefault();
+
+  if(!sb) return;
+
+
+  const originalName=
+    $('zoneOriginalName')
+      ? $('zoneOriginalName').value.trim()
+      : '';
+
+
+  const name=
+    $('zoneName')
+      ? $('zoneName').value.trim()
+      : '';
+
+
+  const location=
+    $('zoneLocation')
+      ? $('zoneLocation').value.trim()
+      : '';
+
+
+  const leader=
+    $('zoneLeader')
+      ? $('zoneLeader').value.trim()
+      : '';
+
+
+  const viceLeader=
+    $('zoneViceLeader')
+      ? $('zoneViceLeader').value.trim()
+      : '';
+
+
+  const admins=
+    $('zoneAdmins')
+      ? $('zoneAdmins').value.trim()
+      : '';
+
+
+  if(
+    !name ||
+    !location
+  ){
+
+    message(
+      'zoneMessage',
+      'Zone name and location are required.',
+      'error'
+    );
+
+    return;
+  }
+
+
+  const payload={
+
+    name,
+    location,
+
+    leader:
+      leader || 'TBA',
+
+    vice_leader:
+      viceLeader || 'TBA',
+
+    admins:
+      admins || 'TBA'
+
+  };
+
+
+  message(
+    'zoneMessage',
+    originalName
+      ? 'Updating zone...'
+      : 'Saving zone...'
+  );
+
+
+  let result;
+
+
+  if(originalName){
+
+    result=
+      await sb
+        .from('zones')
+        .update(payload)
         .eq(
-          'status',
-          'verified'
-        )
+          'name',
+          originalName
+        );
+
+  }else{
+
+    result=
+      await sb
+        .from('zones')
+        .insert(payload);
+
+  }
+
+
+  if(result.error){
+
+    console.error(
+      result.error
+    );
+
+
+    message(
+      'zoneMessage',
+      result.error.message,
+      'error'
+    );
+
+
+    return;
+  }
+
+
+  message(
+    'zoneMessage',
+    originalName
+      ? 'Zone updated successfully.'
+      : 'Zone added successfully.',
+    'ok'
+  );
+
+
+  await loadAdmin();
+  await loadPublic();
+
+
+  setTimeout(
+    resetZoneForm,
+    700
+  );
+}
+
+
+/* =========================
+   SAVE EVENT
+========================= */
+
+async function saveEvent(e){
+
+  e.preventDefault();
+
+  if(!sb) return;
+
+
+  const eventId=
+    $('eventId')
+      ? $('eventId').value.trim()
+      : '';
+
+
+  const title=
+    $('eventTitle')
+      ? $('eventTitle').value.trim()
+      : '';
+
+
+  const eventDate=
+    $('eventDate')
+      ? $('eventDate').value
+      : '';
+
+
+  const eventTime=
+    $('eventTime')
+      ? $('eventTime').value.trim()
+      : '';
+
+
+  const location=
+    $('eventLocation')
+      ? $('eventLocation').value.trim()
+      : '';
+
+
+  const description=
+    $('eventDescription')
+      ? $('eventDescription').value.trim()
+      : '';
+
+
+  if(!title){
+
+    message(
+      'eventMessage',
+      'Event title is required.',
+      'error'
+    );
+
+    return;
+  }
+
+
+  const payload={
+
+    title,
+
+    event_date:
+      eventDate || null,
+
+    event_time:
+      eventTime || null,
+
+    location:
+      location || null,
+
+    description:
+      description || null
+
+  };
+
+
+  message(
+    'eventMessage',
+    eventId
+      ? 'Updating event...'
+      : 'Saving event...'
+  );
+
+
+  let result;
+
+
+  if(eventId){
+
+    result=
+      await sb
+        .from('events')
+        .update(payload)
         .eq(
-          'public_visible',
-          true
-        )
-        .maybeSingle();
+          'id',
+          eventId
+        );
+
+  }else{
+
+    result=
+      await sb
+        .from('events')
+        .insert(payload);
+
+  }
 
 
-      if(error){
+  if(result.error){
 
-        r.className=
-          'result bad';
-
-        r.innerHTML=
-          'Unable to check the database right now.';
-
-        return;
-      }
+    console.error(
+      result.error
+    );
 
 
-      r.className=
-        `result ${
-          data
-          ? 'ok'
-          : 'bad'
-        }`;
+    message(
+      'eventMessage',
+      result.error.message,
+      'error'
+    );
 
 
-      r.innerHTML=
+    return;
+  }
 
-        data
 
-        ?
+  message(
+    'eventMessage',
+    eventId
+      ? 'Event updated successfully.'
+      : 'Event added successfully.',
+    'ok'
+  );
 
-        `✓ <b>VERIFIED MEMBER</b>
 
-        <br>
+  await loadAdmin();
+  await loadPublic();
 
-        <strong>
-          ${esc(data.name)}
-        </strong>
 
-        · ${esc(data.zone)}
-        · ${esc(data.bike)}
+  setTimeout(
+    resetEventForm,
+    700
+  );
+}
 
-        <br>
 
-        <small>
+/* =========================
+   MEMBERSHIP REQUEST FORM
+========================= */
 
-          Member ID:
-          ${esc(data.id)}
+async function submitMembershipRequest(e){
 
-          ·
-          ${esc(data.position)}
+  e.preventDefault();
 
-        </small>`
 
-        :
+  if(!sb){
 
-        `✕ <b>NOT VERIFIED</b>
+    message(
+      'requestMessage',
+      'Database is not connected.',
+      'error'
+    );
 
-        <br>
+    return;
+  }
 
-        No active public verified member was found for that ID.`;
 
-    };
+  const name=
+    $('requestName')
+      ? $('requestName').value.trim()
+      : '';
+
+
+  const zone=
+    $('requestZone')
+      ? $('requestZone').value.trim()
+      : '';
+
+
+  const bike=
+    $('requestBike')
+      ? $('requestBike').value.trim()
+      : '';
+
+
+  const contact=
+    $('requestContact')
+      ? $('requestContact').value.trim()
+      : '';
+
+
+  const requestText=
+    $('requestText')
+      ? $('requestText').value.trim()
+      : '';
+
+
+  if(
+    !name ||
+    !zone
+  ){
+
+    message(
+      'requestMessage',
+      'Your name and zone are required.',
+      'error'
+    );
+
+    return;
+  }
+
+
+  message(
+    'requestMessage',
+    'Sending request...'
+  );
+
+
+  const payload={
+
+    name,
+    zone,
+
+    bike:
+      bike || 'Mio i 125'
+
+  };
+
+
+  if(contact){
+    payload.contact=contact;
+  }
+
+
+  if(requestText){
+    payload.message=requestText;
+  }
+
+
+  const {
+    error
+  }=
+  await sb
+    .from('membership_requests')
+    .insert(payload);
+
+
+  if(error){
+
+    console.error(error);
+
+
+    message(
+      'requestMessage',
+      error.message,
+      'error'
+    );
+
+
+    return;
+  }
+
+
+  message(
+    'requestMessage',
+    'Your membership request was submitted successfully.',
+    'ok'
+  );
+
+
+  if($('requestForm')){
+    $('requestForm').reset();
+  }
+
+
+  populateRequestZoneDropdown();
+}
+
+
+/* =========================
+   SEARCH LISTENERS
+========================= */
+
+if($('zoneSearch')){
+
+  $('zoneSearch').addEventListener(
+    'input',
+    e=>{
+
+      renderZones(
+        e.target.value
+      );
+
+    }
+  );
+
+}
+
+
+if($('memberSearch')){
+
+  $('memberSearch').addEventListener(
+    'input',
+    e=>{
+
+      renderMembers(
+        e.target.value
+      );
+
+    }
+  );
+
+}
+
+
+/* =========================
+   VERIFY BUTTON
+========================= */
+
+if($('verifyBtn')){
+
+  $('verifyBtn').addEventListener(
+    'click',
+    verifyMember
+  );
 
 }
 
 
 if($('verifyInput')){
 
-  $('verifyInput').onkeydown=
+  $('verifyInput').addEventListener(
+    'keydown',
     e=>{
 
       if(e.key==='Enter'){
 
-        $('verifyBtn').click();
+        e.preventDefault();
+
+        verifyMember();
 
       }
 
-    };
+    }
+  );
+
+}
+
+
+/* =========================
+   CLOSE MEMBERS BUTTON
+========================= */
+
+if($('closeMembers')){
+
+  $('closeMembers').addEventListener(
+    'click',
+    closeZoneMembers
+  );
+
+}
+
+
+/* =========================
+   ADMIN LOGIN FORM
+========================= */
+
+if($('loginForm')){
+
+  $('loginForm').addEventListener(
+    'submit',
+    loginAdmin
+  );
+
+}
+
+
+/* =========================
+   ADMIN LOGOUT
+========================= */
+
+if($('logoutBtn')){
+
+  $('logoutBtn').addEventListener(
+    'click',
+    logoutAdmin
+  );
+
+}
+
+
+/* =========================
+   MEMBER FORM
+========================= */
+
+if($('memberForm')){
+
+  $('memberForm').addEventListener(
+    'submit',
+    saveMember
+  );
+
+}
+
+
+if($('memberCancel')){
+
+  $('memberCancel').addEventListener(
+    'click',
+    resetMemberForm
+  );
+
+}
+
+
+/* =========================
+   ZONE FORM
+========================= */
+
+if($('zoneForm')){
+
+  $('zoneForm').addEventListener(
+    'submit',
+    saveZone
+  );
+
+}
+
+
+if($('zoneCancel')){
+
+  $('zoneCancel').addEventListener(
+    'click',
+    resetZoneForm
+  );
+
+}
+
+
+/* =========================
+   EVENT FORM
+========================= */
+
+if($('eventForm')){
+
+  $('eventForm').addEventListener(
+    'submit',
+    saveEvent
+  );
+
+}
+
+
+if($('eventCancel')){
+
+  $('eventCancel').addEventListener(
+    'click',
+    resetEventForm
+  );
 
 }
 
@@ -1995,752 +3335,77 @@ if($('verifyInput')){
 
 if($('requestForm')){
 
-  $('requestForm').onsubmit = async e => {
-
-    e.preventDefault();
-
-    if(!sb){
-
-      message(
-        'requestMessage',
-        'Database is not connected.',
-        'error'
-      );
-
-      return;
-    }
-
-
-    const memberId =
-      $('requestMemberId').value.trim();
-
-    const name =
-      $('requestName').value.trim();
-
-    const zone =
-      $('requestZone').value.trim();
-
-    const bike =
-      $('requestBike').value.trim() || 'Mio i 125';
-
-
-    if(!memberId || !name || !zone){
-
-      message(
-        'requestMessage',
-        'Please complete all required fields.',
-        'error'
-      );
-
-      return;
-    }
-
-
-    message(
-      'requestMessage',
-      'Submitting request...'
-    );
-
-
-    /* Check if member ID is already registered */
-
-    const {
-      data: existingMember,
-      error: memberCheckError
-    } =
-      await sb
-        .from('members')
-        .select('id')
-        .eq('id', memberId)
-        .maybeSingle();
-
-
-    if(memberCheckError){
-
-      message(
-        'requestMessage',
-        'Unable to check the member ID.',
-        'error'
-      );
-
-      return;
-    }
-
-
-    if(existingMember){
-
-      message(
-        'requestMessage',
-        'This Member ID is already registered.',
-        'error'
-      );
-
-      return;
-    }
-
-
-    /* Submit pending request */
-
-    const { error } =
-      await sb
-        .from('member_requests')
-        .insert({
-          member_id: memberId,
-          name: name,
-          zone: zone,
-          bike: bike,
-          status: 'pending'
-        });
-
-
-    if(error){
-
-      message(
-        'requestMessage',
-        error.message,
-        'error'
-      );
-
-      return;
-    }
-
-
-    message(
-      'requestMessage',
-      'Membership request submitted successfully. Please wait for administrator approval.',
-      'ok'
-    );
-
-
-    $('requestForm').reset();
-
-    $('requestBike').value =
-      'Mio i 125';
-
-    populateRequestZoneDropdown();
-
-  };
-
-}
-/* =========================
-   ADMIN LOGIN
-========================= */
-
-if($('loginForm')){
-
-  $('loginForm').onsubmit=
-    async e=>{
-
-
-      e.preventDefault();
-
-
-      if(!sb){
-
-        message(
-          'loginMessage',
-          'Connect Supabase first.',
-          'error'
-        );
-
-        return;
-      }
-
-
-      message(
-        'loginMessage',
-        'Signing in...'
-      );
-
-
-      const {error}=
-        await sb.auth.signInWithPassword({
-
-          email:
-            $('loginEmail')
-              .value
-              .trim(),
-
-          password:
-            $('loginPassword')
-              .value
-
-        });
-
-
-      if(error){
-
-        message(
-          'loginMessage',
-          error.message,
-          'error'
-        );
-
-        return;
-      }
-
-
-      message(
-        'loginMessage',
-        ''
-      );
-
-
-      await checkAdmin();
-
-    };
-
-}
-
-
-/* =========================
-   LOGOUT / REFRESH
-========================= */
-
-if($('logoutBtn')){
-
-  $('logoutBtn').onclick=
-    async()=>{
-
-      await sb.auth.signOut();
-
-      setLoggedOut();
-
-    };
-
-}
-
-
-if($('refreshAdmin')){
-
-  $('refreshAdmin').onclick=
-    loadAdmin;
-
-}
-
-
-if($('memberCancel')){
-
-  $('memberCancel').onclick=
-    resetMemberForm;
-
-}
-
-
-if($('zoneCancel')){
-
-  $('zoneCancel').onclick=
-    resetZoneForm;
-
-}
-
-if($('eventCancel')){
-
-  $('eventCancel').onclick=
-    resetEventForm;
-
-}
-
-
-/* =========================
-   SAVE MEMBER
-========================= */
-
-if($('memberForm')){
-
-  $('memberForm').onsubmit=
-    async e=>{
-
-
-      e.preventDefault();
-
-
-      if(!sb) return;
-
-
-      const original=
-        $('memberOriginalId')
-          .value
-          .trim();
-
-
-      const row={
-
-        id:
-          $('memberId')
-            .value
-            .trim(),
-
-        name:
-          $('memberName')
-            .value
-            .trim(),
-
-        zone:
-          $('memberZone')
-            .value
-            .trim(),
-
-        bike:
-          $('memberBike')
-            .value
-            .trim()
-          ||
-          'Mio i 125',
-
-        position:
-          $('memberPosition')
-            .value
-            .trim()
-          ||
-          'Member',
-
-        status:
-          $('memberStatus')
-            .value,
-
-        public_visible:
-          $('memberPublic')
-            .checked
-
-      };
-
-
-      if(
-        !row.id ||
-        !row.name ||
-        !row.zone
-      ){
-
-        message(
-          'memberMessage',
-          'Please complete the required fields.',
-          'error'
-        );
-
-        return;
-      }
-
-
-      message(
-        'memberMessage',
-        'Saving...'
-      );
-
-
-      if(
-        original &&
-        original !== row.id
-      ){
-
-
-        const {error:e1}=
-          await sb
-            .from('members')
-            .insert(row);
-
-
-        if(e1){
-
-          message(
-            'memberMessage',
-            e1.message,
-            'error'
-          );
-
-          return;
-        }
-
-
-        const {error:e2}=
-          await sb
-            .from('members')
-            .delete()
-            .eq(
-              'id',
-              original
-            );
-
-
-        if(e2){
-
-          message(
-            'memberMessage',
-            `New record saved, but old ID could not be deleted: ${e2.message}`,
-            'error'
-          );
-
-          return;
-        }
-
-
-      }else{
-
-
-        const {error}=
-          await sb
-            .from('members')
-            .upsert(
-              row,
-              {
-                onConflict:'id'
-              }
-            );
-
-
-        if(error){
-
-          message(
-            'memberMessage',
-            error.message,
-            'error'
-          );
-
-          return;
-        }
-
-      }
-
-
-      message(
-        'memberMessage',
-        'Member saved successfully.',
-        'ok'
-      );
-
-
-      resetMemberForm();
-
-
-      await loadAdmin();
-      await loadPublic();
-
-    };
-
-}
-
-
-/* =========================
-   SAVE ZONE
-========================= */
-
-if($('zoneForm')){
-
-  $('zoneForm').onsubmit=
-    async e=>{
-
-
-      e.preventDefault();
-
-
-      if(!sb) return;
-
-
-      const original=
-        $('zoneOriginalName')
-          .value
-          .trim();
-
-
-      const row={
-
-        name:
-          $('zoneName')
-            .value
-            .trim(),
-
-        location:
-          $('zoneLocation')
-            .value
-            .trim(),
-
-        leader:
-          $('zoneLeader')
-            .value
-            .trim()
-          ||
-          'TBA',
-
-        vice_leader:
-          $('zoneViceLeader')
-            .value
-            .trim()
-          ||
-          'TBA',
-
-        admins:
-          $('zoneAdmins')
-            .value
-            .trim()
-          ||
-          'TBA'
-
-      };
-
-
-      message(
-        'zoneMessage',
-        'Saving...'
-      );
-
-
-      if(
-        original &&
-        original !== row.name
-      ){
-
-
-        const {error:e1}=
-          await sb
-            .from('zones')
-            .insert(row);
-
-
-        if(e1){
-
-          message(
-            'zoneMessage',
-            e1.message,
-            'error'
-          );
-
-          return;
-        }
-
-
-        const {error:e2}=
-          await sb
-            .from('zones')
-            .delete()
-            .eq(
-              'name',
-              original
-            );
-
-
-        if(e2){
-
-          message(
-            'zoneMessage',
-            `New zone saved, but old zone could not be deleted: ${e2.message}`,
-            'error'
-          );
-
-          return;
-        }
-
-
-      }else{
-
-
-        const {error}=
-          await sb
-            .from('zones')
-            .upsert(
-              row,
-              {
-                onConflict:'name'
-              }
-            );
-
-
-        if(error){
-
-          message(
-            'zoneMessage',
-            error.message,
-            'error'
-          );
-
-          return;
-        }
-
-      }
-
-
-      message(
-        'zoneMessage',
-        'Zone saved successfully.',
-        'ok'
-      );
-
-
-      resetZoneForm();
-
-
-      await loadAdmin();
-      await loadPublic();
-
-    };
+  $('requestForm').addEventListener(
+    'submit',
+    submitMembershipRequest
+  );
 
 }
 
 /* =========================
-   SAVE EVENT
+   MOBILE NAVIGATION
 ========================= */
 
-if($('eventForm')){
+const menuToggle =
+  $('menuToggle');
 
-  $('eventForm').onsubmit=
-    async e=>{
-
-      e.preventDefault();
-
-      if(!sb) return;
+const nav =
+  $('mainNav');
 
 
-      const id=
-        $('eventId')
-          .value
-          .trim();
+function closeMobileMenu(){
+
+  if(!nav || !menuToggle) return;
+
+  nav.classList.remove('open');
+
+  menuToggle.classList.remove('open');
+
+  menuToggle.setAttribute(
+    'aria-expanded',
+    'false'
+  );
+}
 
 
-      const row={
+function toggleMobileMenu(){
 
-        title:
-          $('eventTitle')
-            .value
-            .trim(),
+  if(!nav || !menuToggle) return;
 
-        event_date:
-          $('eventDate')
-            .value
-          ||
-          null,
+  const isOpen =
+    nav.classList.toggle('open');
 
-        event_time:
-          $('eventTime')
-            .value
-          ||
-          null,
+  menuToggle.classList.toggle(
+    'open',
+    isOpen
+  );
 
-        location:
-          $('eventLocation')
-            .value
-            .trim()
-          ||
-          null,
-
-        description:
-          $('eventDescription')
-            .value
-            .trim()
-          ||
-          null
-
-      };
+  menuToggle.setAttribute(
+    'aria-expanded',
+    String(isOpen)
+  );
+}
 
 
-      if(!row.title){
+if(menuToggle){
 
-        message(
-          'eventMessage',
-          'Please enter an event title.',
-          'error'
-        );
-
-        return;
-      }
-
-
-      message(
-        'eventMessage',
-        'Saving...'
-      );
-
-
-      let result;
-
-
-      if(id){
-
-        result=
-          await sb
-            .from('events')
-            .update(row)
-            .eq(
-              'id',
-              Number(id)
-            );
-
-      }else{
-
-        result=
-          await sb
-            .from('events')
-            .insert(row);
-
-      }
-
-
-      if(result.error){
-
-        message(
-          'eventMessage',
-          result.error.message,
-          'error'
-        );
-
-        return;
-      }
-
-
-      message(
-        'eventMessage',
-        'Event saved successfully.',
-        'ok'
-      );
-
-
-      resetEventForm();
-
-
-      await loadAdmin();
-      await loadPublic();
-
-    };
+  menuToggle.addEventListener(
+    'click',
+    toggleMobileMenu
+  );
 
 }
 
-/* =========================
-   MOBILE MENU
-========================= */
 
-const menuBtn=
-  $('menuBtn');
-
-const nav=
-  $('nav');
-
-
-if(
-  menuBtn &&
-  nav
-){
-
-  menuBtn.onclick=
-    ()=>{
-
-      nav.classList.toggle(
-        'open'
-      );
-
-    };
-
+if(nav){
 
   nav
     .querySelectorAll('a')
-    .forEach(a=>{
+    .forEach(link=>{
 
-      a.addEventListener(
+      link.addEventListener(
         'click',
-        ()=>{
-
-          nav.classList.remove(
-            'open'
-          );
-
-        }
+        closeMobileMenu
       );
 
     });
@@ -2749,32 +3414,247 @@ if(
 
 
 /* =========================
-   START WEBSITE
+   CLOSE MOBILE MENU
+   WHEN CLICKING OUTSIDE
 ========================= */
 
-(async()=>{
+document.addEventListener(
+  'click',
+  e=>{
+
+    if(
+      !nav ||
+      !menuToggle ||
+      !nav.classList.contains('open')
+    ){
+      return;
+    }
 
 
-  renderAll();
+    if(
+      nav.contains(e.target) ||
+      menuToggle.contains(e.target)
+    ){
+      return;
+    }
 
 
-  if(!sb){
-    return;
+    closeMobileMenu();
   }
+);
 
+
+/* =========================
+   CLOSE MOBILE MENU
+   WITH ESCAPE KEY
+========================= */
+
+document.addEventListener(
+  'keydown',
+  e=>{
+
+    if(e.key === 'Escape'){
+      closeMobileMenu();
+    }
+
+  }
+);
+
+
+/* =========================
+   WINDOW RESIZE
+========================= */
+
+window.addEventListener(
+  'resize',
+  ()=>{
+
+    if(window.innerWidth > 720){
+      closeMobileMenu();
+    }
+
+  }
+);
+
+
+/* =========================
+   SMOOTH INTERNAL LINKS
+========================= */
+
+document
+  .querySelectorAll('a[href^="#"]')
+  .forEach(link=>{
+
+    link.addEventListener(
+      'click',
+      e=>{
+
+        const href =
+          link.getAttribute('href');
+
+
+        if(
+          !href ||
+          href === '#'
+        ){
+          return;
+        }
+
+
+        const target =
+          document.querySelector(href);
+
+
+        if(!target){
+          return;
+        }
+
+
+        e.preventDefault();
+
+
+        target.scrollIntoView({
+          behavior:'smooth',
+          block:'start'
+        });
+
+
+        if(
+          history.pushState
+        ){
+
+          history.pushState(
+            null,
+            '',
+            href
+          );
+
+        }
+
+      }
+    );
+
+  });
+
+
+/* =========================
+   SUPABASE AUTH STATE
+========================= */
+
+if(sb){
 
   sb.auth.onAuthStateChange(
-    ()=>{
+    async (
+      event,
+      session
+    )=>{
 
-      checkAdmin();
+      if(
+        event === 'SIGNED_OUT' ||
+        !session
+      ){
+
+        setLoggedOut();
+
+        return;
+      }
+
+
+      if(
+        event === 'SIGNED_IN'
+      ){
+
+        await checkAdmin();
+
+      }
 
     }
   );
 
+}
+
+
+/* =========================
+   INITIAL UI STATE
+========================= */
+
+function initializeUI(){
+
+  /*
+    Keep the member section hidden
+    until a zone is selected.
+  */
+
+  if($('members')){
+
+    $('members').hidden =
+      !selectedZone;
+
+  }
+
+
+  /*
+    Make sure the mobile menu
+    starts closed.
+  */
+
+  closeMobileMenu();
+
+
+  /*
+    Reset admin forms.
+  */
+
+  resetMemberForm();
+  resetZoneForm();
+  resetEventForm();
+
+
+  /*
+    Render empty/default content
+    while Supabase is loading.
+  */
+
+  renderAll();
+}
+
+
+/* =========================
+   START WEBSITE
+========================= */
+
+async function startWebsite(){
+
+  initializeUI();
+
+
+  /*
+    Load all public website data:
+    zones, verified members and events.
+  */
 
   await loadPublic();
 
-  await checkAdmin();
+
+  /*
+    Check whether an administrator
+    is already logged in.
+  */
+
+  if(sb){
+
+    await checkAdmin();
+
+  }else{
+
+    setLoggedOut();
+
+  }
+}
 
 
-})();
+/* =========================
+   RUN
+========================= */
+
+startWebsite();
