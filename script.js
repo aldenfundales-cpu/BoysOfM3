@@ -48,6 +48,7 @@ let publicEvents = [];
 let adminMembers = [];
 let adminZones = [];
 let adminRequests = [];
+let adminEvents = [];
 
 let selectedZone = '';
 
@@ -772,6 +773,42 @@ function resetZoneForm(){
   );
 }
 
+/* =========================
+   RESET EVENT FORM
+========================= */
+
+function resetEventForm(){
+
+  const form=
+    $('eventForm');
+
+  if(form){
+    form.reset();
+  }
+
+  if($('eventId')){
+    $('eventId').value='';
+  }
+
+  if($('eventFormTitle')){
+    $('eventFormTitle').textContent=
+      'Add Event';
+  }
+
+  if($('eventSubmit')){
+    $('eventSubmit').textContent=
+      'Save Event';
+  }
+
+  if($('eventCancel')){
+    $('eventCancel').hidden=true;
+  }
+
+  message(
+    'eventMessage',
+    ''
+  );
+}
 
 /* =========================
    ADMIN AUTH
@@ -883,8 +920,7 @@ async function loadAdmin(){
 
   if(!sb) return;
 
-
-  const [m,z,r]=
+  const [m,z,r,e] =
   await Promise.all([
 
     sb
@@ -911,22 +947,35 @@ async function loadAdmin(){
         {
           ascending:true
         }
+      ),
+
+    sb
+      .from('events')
+      .select('*')
+      .order(
+        'event_date',
+        {
+          ascending:true,
+          nullsFirst:false
+        }
       )
 
   ]);
 
 
   if(
-  m.error ||
-  z.error ||
-  r.error
-){
+    m.error ||
+    z.error ||
+    r.error ||
+    e.error
+  ){
 
     console.error(
-  m.error ||
-  z.error ||
-  r.error
-);
+      m.error ||
+      z.error ||
+      r.error ||
+      e.error
+    );
 
 
     message(
@@ -940,22 +989,26 @@ async function loadAdmin(){
   }
 
 
-  adminMembers=
+  adminMembers =
     m.data || [];
 
 
-  adminZones=
+  adminZones =
     z.data || [];
 
-  adminRequests=
-  r.data || [];
+
+  adminRequests =
+    r.data || [];
+
+
+  adminEvents =
+    e.data || [];
 
 
   populateMemberZoneDropdown();
 
   renderAdminLists();
 }
-
 
 /* =========================
    ADMIN LISTS
@@ -971,6 +1024,9 @@ function renderAdminLists(){
   
   const requestList=
   $('adminRequestList');
+
+  const eventList=
+  $('adminEventList');
 
   
   if(requestList){
@@ -1112,8 +1168,7 @@ function renderAdminLists(){
 
   }
 
-
-  if(zoneList){
+    if(zoneList){
 
     zoneList.innerHTML=
 
@@ -1196,6 +1251,73 @@ function renderAdminLists(){
       </p>`;
 
   }
+   
+  if(eventList){
+
+    eventList.innerHTML=
+
+      adminEvents.length
+
+      ?
+
+      `<div class="admin-table">
+
+        ${adminEvents.map(e=>`
+
+          <div class="admin-row">
+
+            <div>
+
+              <strong>
+                ${esc(e.title)}
+              </strong>
+
+              <br>
+
+              <small>
+
+                📅 ${formatDate(e.event_date)}
+                ·
+                🕒 ${esc(e.event_time || 'TBA')}
+                ·
+                📍 ${esc(e.location || 'TBA')}
+
+              </small>
+
+            </div>
+
+
+            <div class="row-actions">
+
+              <button
+                class="ghost-btn"
+                data-edit-event="${e.id}"
+              >
+                Edit
+              </button>
+
+              <button
+                class="danger small"
+                data-delete-event="${e.id}"
+              >
+                Delete
+              </button>
+
+            </div>
+
+          </div>
+
+        `).join('')}
+
+      </div>`
+
+      :
+
+      `<p class="muted">
+        No events in the database yet.
+      </p>`;
+
+  }
 
 
   document
@@ -1246,6 +1368,34 @@ function renderAdminLists(){
         b.onclick=()=>
           deleteZone(
             b.dataset.deleteZone
+          )
+    );
+    document
+    .querySelectorAll(
+      '[data-edit-event]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          editEvent(
+            Number(
+              b.dataset.editEvent
+            )
+          )
+    );
+
+
+  document
+    .querySelectorAll(
+      '[data-delete-event]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          deleteEvent(
+            Number(
+              b.dataset.deleteEvent
+            )
           )
     );
 document
@@ -1492,6 +1642,62 @@ function editZone(name){
   });
 }
 
+/* =========================
+   EDIT EVENT
+========================= */
+
+function editEvent(id){
+
+  const e=
+    adminEvents.find(
+      x=>
+        Number(x.id)===
+        Number(id)
+    );
+
+  if(!e) return;
+
+
+  $('eventId').value=
+    e.id;
+
+  $('eventTitle').value=
+    e.title || '';
+
+  $('eventDate').value=
+    e.event_date || '';
+
+  $('eventTime').value=
+    e.event_time || '';
+
+  $('eventLocation').value=
+    e.location || '';
+
+  $('eventDescription').value=
+    e.description || '';
+
+
+  if($('eventFormTitle')){
+    $('eventFormTitle').textContent=
+      'Edit Event';
+  }
+
+  if($('eventSubmit')){
+    $('eventSubmit').textContent=
+      'Update Event';
+  }
+
+  if($('eventCancel')){
+    $('eventCancel').hidden=false;
+  }
+
+
+  $('eventForm').scrollIntoView({
+    behavior:'smooth',
+    block:'center'
+  });
+}
+
 
 /* =========================
    DELETE MEMBER
@@ -1550,6 +1756,42 @@ async function deleteZone(name){
       .from('zones')
       .delete()
       .eq('name',name);
+
+
+  if(error){
+
+    alert(
+      error.message
+    );
+
+    return;
+  }
+
+
+  await loadAdmin();
+  await loadPublic();
+}
+
+/* =========================
+   DELETE EVENT
+========================= */
+
+async function deleteEvent(id){
+
+  if(
+    !confirm(
+      'Delete this event? This cannot be undone.'
+    )
+  ){
+    return;
+  }
+
+
+  const {error}=
+    await sb
+      .from('events')
+      .delete()
+      .eq('id',id);
 
 
   if(error){
@@ -1992,6 +2234,13 @@ if($('zoneCancel')){
 
 }
 
+if($('eventCancel')){
+
+  $('eventCancel').onclick=
+    resetEventForm;
+
+}
+
 
 /* =========================
    SAVE MEMBER
@@ -2326,6 +2575,132 @@ if($('zoneForm')){
 
 }
 
+/* =========================
+   SAVE EVENT
+========================= */
+
+if($('eventForm')){
+
+  $('eventForm').onsubmit=
+    async e=>{
+
+      e.preventDefault();
+
+      if(!sb) return;
+
+
+      const id=
+        $('eventId')
+          .value
+          .trim();
+
+
+      const row={
+
+        title:
+          $('eventTitle')
+            .value
+            .trim(),
+
+        event_date:
+          $('eventDate')
+            .value
+          ||
+          null,
+
+        event_time:
+          $('eventTime')
+            .value
+          ||
+          null,
+
+        location:
+          $('eventLocation')
+            .value
+            .trim()
+          ||
+          null,
+
+        description:
+          $('eventDescription')
+            .value
+            .trim()
+          ||
+          null
+
+      };
+
+
+      if(!row.title){
+
+        message(
+          'eventMessage',
+          'Please enter an event title.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      message(
+        'eventMessage',
+        'Saving...'
+      );
+
+
+      let result;
+
+
+      if(id){
+
+        result=
+          await sb
+            .from('events')
+            .update(row)
+            .eq(
+              'id',
+              Number(id)
+            );
+
+      }else{
+
+        result=
+          await sb
+            .from('events')
+            .insert(row);
+
+      }
+
+
+      if(result.error){
+
+        message(
+          'eventMessage',
+          result.error.message,
+          'error'
+        );
+
+        return;
+      }
+
+
+      message(
+        'eventMessage',
+        'Event saved successfully.',
+        'ok'
+      );
+
+
+      resetEventForm();
+
+
+      await loadAdmin();
+      await loadPublic();
+
+    };
+
+}
 
 /* =========================
    MOBILE MENU
