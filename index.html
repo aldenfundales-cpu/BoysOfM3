@@ -612,6 +612,46 @@
         </select>
 
 
+                <!-- ZONE COVER PHOTO -->
+
+        <label for="zoneCoverFile">
+          Zone Cover Photo
+        </label>
+
+        <input
+          type="file"
+          id="zoneCoverFile"
+          accept="image/png,image/jpeg,image/webp,image/heic,image/heif,.heic,.heif"
+        >
+
+
+        <!-- CURRENT COVER URL -->
+
+        <input
+          type="hidden"
+          id="zoneCoverUrl"
+        >
+
+
+        <!-- ZONE COVER PREVIEW -->
+
+        <div
+          id="zoneCoverPreviewWrap"
+          class="zone-cover-admin-preview"
+          hidden
+        >
+          <img
+            id="zoneCoverPreview"
+            src=""
+            alt="Zone cover photo preview"
+          >
+        </div>
+
+
+        <p class="muted">
+          Maximum cover photo size: 10 MB
+        </p>
+        
         <!-- ZONE LOGO -->
 
         <label for="zoneLogoFile">
