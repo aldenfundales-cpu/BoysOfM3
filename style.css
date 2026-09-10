@@ -347,3 +347,136 @@ footer{padding:30px 8%;border-top:1px solid var(--line);color:#777;font-size:12p
   min-width:16px;
   min-height:16px;
 }
+
+/* =========================
+   ZONE LOGOS + STATUS
+========================= */
+
+.zone-logo{
+  width:100%;
+  min-height:110px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 0 14px;
+}
+
+.zone-logo img{
+  display:block;
+  width:105px;
+  height:105px;
+  max-width:100%;
+  object-fit:contain;
+}
+
+
+/* ACTIVE / INACTIVE ZONE BADGE */
+
+.zone-status-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  color:#bbb;
+}
+
+.zone-status-dot{
+  width:7px;
+  height:7px;
+  min-width:7px;
+  border-radius:50%;
+  display:inline-block;
+  flex:0 0 7px;
+}
+
+
+/* Only the dot becomes green */
+
+.zone-status-tag.active .zone-status-dot{
+  background:#22c55e;
+  box-shadow:0 0 6px rgba(34,197,94,.7);
+}
+
+
+/* Inactive dot */
+
+.zone-status-tag.inactive .zone-status-dot{
+  background:#777;
+  box-shadow:none;
+}
+
+
+/* =========================
+   ADMIN ZONE LOGO PREVIEW
+========================= */
+
+.zone-logo-admin-preview{
+  width:100%;
+  min-height:130px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:14px;
+  border:1px solid #2d2d2d;
+  background:#0c0c0c;
+  border-radius:7px;
+}
+
+.zone-logo-admin-preview[hidden]{
+  display:none;
+}
+
+.zone-logo-admin-preview img{
+  display:block;
+  width:120px;
+  height:120px;
+  max-width:100%;
+  object-fit:contain;
+}
+
+
+/* Zone status dropdown */
+
+#zoneStatus{
+  width:100%;
+  background:#111;
+  color:#fff;
+  border:1px solid #333;
+  padding:13px;
+  border-radius:5px;
+  outline:none;
+}
+
+
+/* Zone logo file selector */
+
+#zoneLogoFile{
+  width:100%;
+}
+
+
+/* =========================
+   MOBILE ZONE LOGO
+========================= */
+
+@media(max-width:720px){
+
+  .zone-logo{
+    min-height:95px;
+    margin-bottom:12px;
+  }
+
+  .zone-logo img{
+    width:90px;
+    height:90px;
+  }
+
+  .zone-logo-admin-preview{
+    min-height:115px;
+  }
+
+  .zone-logo-admin-preview img{
+    width:100px;
+    height:100px;
+  }
+
+}
