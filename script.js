@@ -170,8 +170,8 @@ async function loadPublic(){
 
     sb
       .from('zones')
-     .select(
-  'name,location,leader,vice_leader,admins,logo_url,status'
+   .select(
+  'name,location,leader,vice_leader,admins,logo_url,cover_url,status'
 )
       .order('name'),
 
@@ -430,8 +430,9 @@ function renderZones(filter=''){
 
 
       const isActive=
-  (z.status || 'active') === 'active';
-      
+        (z.status || 'active') === 'active';
+
+
       return `
 
         <article
@@ -442,103 +443,134 @@ function renderZones(filter=''){
           title="View ${esc(z.name)} members"
         >
 
-         ${z.logo_url ? `
-  <div class="zone-logo">
-    <img
-      src="${esc(z.logo_url)}"
-      alt="${esc(z.name)} logo"
-      loading="lazy"
-    >
-  </div>
-` : ''}
-
-
-<span class="tag zone-status-tag ${isActive ? 'active' : 'inactive'}">
-
-  <span
-    class="zone-status-dot"
-    aria-hidden="true"
-  ></span>
-
-  ${
-    isActive
-      ? 'ACTIVE ZONE'
-      : 'INACTIVE ZONE'
-  }
-
-</span>
-
-
-          <h3>
-            ${esc(z.name)}
-          </h3>
-
-
-          <p>
-            ${iconSvg('pin')}
-            ${esc(z.location)}
-          </p>
-
-
-          <p>
-            ${iconSvg('crown')}
-
-            <b>
-              Zone Leader:
-            </b>
-
-            ${esc(
-              z.leader || 'TBA'
-            )}
-          </p>
-
-
-          <p>
-            ${iconSvg('star')}
-
-            <b>
-              Vice Leader:
-            </b>
-
-            ${esc(
-              z.vice_leader || 'TBA'
-            )}
-          </p>
-
-
-          <p>
-
-            ${iconSvg('shield')}
-
-            <b>
-              Admins:
-            </b>
-
-            <br>
+          <div class="zone-media">
 
             ${
-              z.admins &&
-              z.admins !== 'TBA'
-
-                ? z.admins
-                    .split(',')
-                    .map(
-                      admin =>
-                        esc(
-                          admin.trim()
-                        )
-                    )
-                    .join('<br>')
-
-                : 'TBA'
+              z.cover_url
+                ? `
+                  <img
+                    class="zone-cover-img"
+                    src="${esc(z.cover_url)}"
+                    alt="${esc(z.name)} cover photo"
+                    loading="lazy"
+                  >
+                `
+                : `
+                  <div
+                    class="zone-cover-placeholder"
+                    aria-hidden="true"
+                  ></div>
+                `
             }
 
-          </p>
+
+            ${
+              z.logo_url
+                ? `
+                  <div class="zone-logo-overlay">
+                    <img
+                      src="${esc(z.logo_url)}"
+                      alt="${esc(z.name)} logo"
+                      loading="lazy"
+                    >
+                  </div>
+                `
+                : ''
+            }
+
+          </div>
 
 
-          <span class="tag">
-            ${count} verified members
-          </span>
+          <div class="zone-body">
+
+            <span class="tag zone-status-tag ${isActive ? 'active' : 'inactive'}">
+
+              <span
+                class="zone-status-dot"
+                aria-hidden="true"
+              ></span>
+
+              ${
+                isActive
+                  ? 'ACTIVE ZONE'
+                  : 'INACTIVE ZONE'
+              }
+
+            </span>
+
+
+            <h3>
+              ${esc(z.name)}
+            </h3>
+
+
+            <p>
+              ${iconSvg('pin')}
+              ${esc(z.location)}
+            </p>
+
+
+            <p>
+              ${iconSvg('crown')}
+
+              <b>
+                Zone Leader:
+              </b>
+
+              ${esc(
+                z.leader || 'TBA'
+              )}
+            </p>
+
+
+            <p>
+              ${iconSvg('star')}
+
+              <b>
+                Vice Leader:
+              </b>
+
+              ${esc(
+                z.vice_leader || 'TBA'
+              )}
+            </p>
+
+
+            <p>
+
+              ${iconSvg('shield')}
+
+              <b>
+                Admins:
+              </b>
+
+              <br>
+
+              ${
+                z.admins &&
+                z.admins !== 'TBA'
+
+                  ? z.admins
+                      .split(',')
+                      .map(
+                        admin =>
+                          esc(
+                            admin.trim()
+                          )
+                      )
+                      .join('<br>')
+
+                  : 'TBA'
+              }
+
+            </p>
+
+
+            <span class="tag">
+              ${count} verified members
+            </span>
+
+          </div>
 
         </article>
 
@@ -988,6 +1020,35 @@ function resetZoneForm(){
 
     $('zoneStatus').value=
       'active';
+
+  }
+
+
+  if($('zoneCoverFile')){
+
+    $('zoneCoverFile').value='';
+
+  }
+
+
+  if($('zoneCoverUrl')){
+
+    $('zoneCoverUrl').value='';
+
+  }
+
+
+  if($('zoneCoverPreview')){
+
+    $('zoneCoverPreview').src='';
+
+  }
+
+
+  if($('zoneCoverPreviewWrap')){
+
+    $('zoneCoverPreviewWrap').hidden=
+      true;
 
   }
 
@@ -2024,6 +2085,46 @@ function editZone(name){
   }
 
 
+  if($('zoneCoverUrl')){
+
+    $('zoneCoverUrl').value=
+      z.cover_url || '';
+
+  }
+
+
+  if($('zoneCoverFile')){
+
+    $('zoneCoverFile').value='';
+
+  }
+
+
+  if(
+    $('zoneCoverPreview') &&
+    $('zoneCoverPreviewWrap')
+  ){
+
+    if(z.cover_url){
+
+      $('zoneCoverPreview').src=
+        z.cover_url;
+
+      $('zoneCoverPreviewWrap').hidden=
+        false;
+
+    }else{
+
+      $('zoneCoverPreview').src='';
+
+      $('zoneCoverPreviewWrap').hidden=
+        true;
+
+    }
+
+  }
+
+
   if($('zoneLogoUrl')){
 
     $('zoneLogoUrl').value=
@@ -2761,41 +2862,192 @@ if($('eventCancel')){
 
 
 /* =========================
-   ZONE LOGO PREVIEW
+   ZONE IMAGE HELPERS + PREVIEWS
 ========================= */
 
-if($('zoneLogoFile')){
+async function uploadZoneImage(
+  file,
+  bucket,
+  zoneName,
+  label
+){
 
-  $('zoneLogoFile').onchange=
+  const maxSize=
+    10 * 1024 * 1024;
+
+
+  const extension=
+    (
+      file.name
+        .split('.')
+        .pop() || ''
+    ).toLowerCase();
+
+
+  const allowedExtensions=[
+    'png',
+    'jpg',
+    'jpeg',
+    'webp',
+    'heic',
+    'heif'
+  ];
+
+
+  const allowedMimeTypes=[
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+    'image/heic',
+    'image/heif'
+  ];
+
+
+  if(file.size > maxSize){
+
+    throw new Error(
+      `Zone ${label} must be 10 MB or smaller.`
+    );
+
+  }
+
+
+  if(
+    !allowedMimeTypes.includes(
+      file.type
+    ) &&
+    !allowedExtensions.includes(
+      extension
+    )
+  ){
+
+    throw new Error(
+      `Please upload the zone ${label} as PNG, JPG, JPEG, WebP, HEIC, or HEIF.`
+    );
+
+  }
+
+
+  const safeZoneName=
+    zoneName
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9]+/g,
+        '-'
+      )
+      .replace(
+        /^-+|-+$/g,
+        ''
+      )
+    ||
+    'zone';
+
+
+  const uniqueName=
+    `${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2,8)}`;
+
+
+  const filePath=
+    `${safeZoneName}/${uniqueName}.${extension || 'png'}`;
+
+
+  const uploadOptions={
+    cacheControl:'3600',
+    upsert:false
+  };
+
+
+  if(file.type){
+
+    uploadOptions.contentType=
+      file.type;
+
+  }
+
+
+  const {
+    error:uploadError
+  }=
+    await sb.storage
+      .from(bucket)
+      .upload(
+        filePath,
+        file,
+        uploadOptions
+      );
+
+
+  if(uploadError){
+
+    throw new Error(
+      `Zone ${label} upload failed: ${uploadError.message}`
+    );
+
+  }
+
+
+  const {
+    data:publicUrlData
+  }=
+    sb.storage
+      .from(bucket)
+      .getPublicUrl(
+        filePath
+      );
+
+
+  return publicUrlData.publicUrl;
+
+}
+
+
+function bindZoneImagePreview(
+  fileId,
+  urlId,
+  previewId,
+  wrapId,
+  label
+){
+
+  const input=
+    $(fileId);
+
+
+  if(!input) return;
+
+
+  input.onchange=
     ()=>{
 
       const file=
-        $('zoneLogoFile').files[0];
+        input.files[0];
 
 
       if(!file){
 
-        const currentLogo=
-          $('zoneLogoUrl')
-            ? $('zoneLogoUrl').value
+        const currentUrl=
+          $(urlId)
+            ? $(urlId).value
             : '';
 
 
         if(
-          currentLogo &&
-          $('zoneLogoPreview') &&
-          $('zoneLogoPreviewWrap')
+          currentUrl &&
+          $(previewId) &&
+          $(wrapId)
         ){
 
-          $('zoneLogoPreview').src=
-            currentLogo;
+          $(previewId).src=
+            currentUrl;
 
-          $('zoneLogoPreviewWrap').hidden=
+          $(wrapId).hidden=
             false;
 
-        }else if($('zoneLogoPreviewWrap')){
+        }else if($(wrapId)){
 
-          $('zoneLogoPreviewWrap').hidden=
+          $(wrapId).hidden=
             true;
 
         }
@@ -2811,11 +3063,11 @@ if($('zoneLogoFile')){
 
         message(
           'zoneMessage',
-          'Zone logo must be 10 MB or smaller.',
+          `Zone ${label} must be 10 MB or smaller.`,
           'error'
         );
 
-        $('zoneLogoFile').value='';
+        input.value='';
 
         return;
       }
@@ -2826,18 +3078,18 @@ if($('zoneLogoFile')){
 
 
       if(
-        $('zoneLogoPreview') &&
-        $('zoneLogoPreviewWrap')
+        $(previewId) &&
+        $(wrapId)
       ){
 
-        $('zoneLogoPreview').src=
+        $(previewId).src=
           previewUrl;
 
-        $('zoneLogoPreviewWrap').hidden=
+        $(wrapId).hidden=
           false;
 
 
-        $('zoneLogoPreview').onload=
+        $(previewId).onload=
           ()=>{
 
             URL.revokeObjectURL(
@@ -2851,6 +3103,24 @@ if($('zoneLogoFile')){
     };
 
 }
+
+
+bindZoneImagePreview(
+  'zoneCoverFile',
+  'zoneCoverUrl',
+  'zoneCoverPreview',
+  'zoneCoverPreviewWrap',
+  'cover photo'
+);
+
+
+bindZoneImagePreview(
+  'zoneLogoFile',
+  'zoneLogoUrl',
+  'zoneLogoPreview',
+  'zoneLogoPreviewWrap',
+  'logo'
+);
 
 /* =========================
    SAVE MEMBER
@@ -3078,6 +3348,217 @@ if($('zoneForm')){
       }
 
 
+      let logoUrl=
+        $('zoneLogoUrl')
+          ? $('zoneLogoUrl').value.trim()
+          : '';
+
+
+      let coverUrl=
+        $('zoneCoverUrl')
+          ? $('zoneCoverUrl').value.trim()
+          : '';
+
+
+      const logoFile=
+        $('zoneLogoFile') &&
+        $('zoneLogoFile').files
+          ? $('zoneLogoFile').files[0]
+          : null;
+
+
+      const coverFile=
+        $('zoneCoverFile') &&
+        $('zoneCoverFile').files
+          ? $('zoneCoverFile').files[0]
+          : null;
+
+
+      try{
+
+        if(coverFile){
+
+          message(
+            'zoneMessage',
+            'Uploading zone cover photo...'
+          );
+
+          coverUrl=
+            await uploadZoneImage(
+              coverFile,
+              'zone-covers',
+              zoneName,
+              'cover photo'
+            );
+
+        }
+
+
+        if(logoFile){
+
+          message(
+            'zoneMessage',
+            'Uploading zone logo...'
+          );
+
+          logoUrl=
+            await uploadZoneImage(
+              logoFile,
+              'zone-logos',
+              zoneName,
+              'logo'
+            );
+
+        }
+
+      }catch(error){
+
+        message(
+          'zoneMessage',
+          error.message,
+          'error'
+        );
+
+        return;
+      }
+
+
+      const row={
+
+        name:
+          zoneName,
+
+        location:
+          zoneLocation,
+
+        leader:
+          $('zoneLeader')
+            .value
+            .trim()
+          ||
+          'TBA',
+
+        vice_leader:
+          $('zoneViceLeader')
+            .value
+            .trim()
+          ||
+          'TBA',
+
+        admins:
+          $('zoneAdmins')
+            .value
+            .trim()
+          ||
+          'TBA',
+
+        status:
+          $('zoneStatus')
+            ? $('zoneStatus').value
+            : 'active',
+
+        logo_url:
+          logoUrl || null,
+
+        cover_url:
+          coverUrl || null
+
+      };
+
+
+      message(
+        'zoneMessage',
+        'Saving zone...'
+      );
+
+
+      if(
+        original &&
+        original !== row.name
+      ){
+
+        const {error:e1}=
+          await sb
+            .from('zones')
+            .insert(row);
+
+
+        if(e1){
+
+          message(
+            'zoneMessage',
+            e1.message,
+            'error'
+          );
+
+          return;
+        }
+
+
+        const {error:e2}=
+          await sb
+            .from('zones')
+            .delete()
+            .eq(
+              'name',
+              original
+            );
+
+
+        if(e2){
+
+          message(
+            'zoneMessage',
+            `New zone saved, but old zone could not be deleted: ${e2.message}`,
+            'error'
+          );
+
+          return;
+        }
+
+      }else{
+
+        const {error}=
+          await sb
+            .from('zones')
+            .upsert(
+              row,
+              {
+                onConflict:'name'
+              }
+            );
+
+
+        if(error){
+
+          message(
+            'zoneMessage',
+            error.message,
+            'error'
+          );
+
+          return;
+        }
+
+      }
+
+
+      message(
+        'zoneMessage',
+        'Zone saved successfully.',
+        'ok'
+      );
+
+
+      resetZoneForm();
+
+      await loadAdmin();
+
+      await loadPublic();
+
+    };
+
+}
       let logoUrl=
         $('zoneLogoUrl')
           ? $('zoneLogoUrl').value.trim()
