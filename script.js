@@ -106,6 +106,8 @@ let adminMembers = [];
 let adminZones = [];
 let adminRequests = [];
 let adminEvents = [];
+let archivedMembers = [];
+let currentAdminRole = '';
 
 let selectedZone = '';
 
@@ -1191,7 +1193,7 @@ async function checkAdmin(){
   await sb
     .from('admins')
     .select(
-      'user_id,email'
+   'user_id,email,role'
     )
     .eq(
       'user_id',
@@ -1227,6 +1229,11 @@ async function checkAdmin(){
 
 function setLoggedOut(){
 
+  currentAdminRole='';
+
+  archivedMembers=[];
+
+
   if($('loginPanel')){
 
     $('loginPanel').hidden=false;
@@ -1246,10 +1253,23 @@ function setLoggedOut(){
     $('adminEmail').textContent='';
 
   }
+
+
+  if($('recoveryPanel')){
+
+    $('recoveryPanel').hidden=true;
+
+  }
+
 }
 
 
+
 function setLoggedIn(user,admin){
+
+  currentAdminRole=
+    admin.role || 'zone_admin';
+
 
   if($('loginPanel')){
 
@@ -1273,7 +1293,17 @@ function setLoggedIn(user,admin){
       '';
 
   }
+
+
+  if($('recoveryPanel')){
+
+    $('recoveryPanel').hidden=
+      currentAdminRole !== 'super_admin';
+
+  }
+
 }
+
 
 
 /* =========================
@@ -1285,28 +1315,27 @@ async function loadAdmin(){
   if(!sb) return;
 
 
-  const [m,z,r,e] =
+  const [m,z,r,e,a] =
   await Promise.all([
 
-   sb
-  .from('members')
-  .select('*')
-  .is(
-    'archived_at',
-    null
-  )
-  .order(
-    'created_at',
-    {
-      ascending:false
-    }
-  ),
+    sb
+      .from('members')
+      .select('*')
+      .is(
+        'archived_at',
+        null
+      )
+      .order(
+        'created_at',
+        {
+          ascending:false
+        }
+      ),
 
     sb
       .from('zones')
       .select('*')
       .order('name'),
-
 
     sb
       .from('member_requests')
@@ -1322,7 +1351,6 @@ async function loadAdmin(){
         }
       ),
 
-
     sb
       .from('events')
       .select('*')
@@ -1331,6 +1359,21 @@ async function loadAdmin(){
         {
           ascending:true,
           nullsFirst:false
+        }
+      ),
+
+    sb
+      .from('members')
+      .select('*')
+      .not(
+        'archived_at',
+        'is',
+        null
+      )
+      .order(
+        'archived_at',
+        {
+          ascending:false
         }
       )
 
@@ -1341,14 +1384,16 @@ async function loadAdmin(){
     m.error ||
     z.error ||
     r.error ||
-    e.error
+    e.error ||
+    a.error
   ){
 
     console.error(
       m.error ||
       z.error ||
       r.error ||
-      e.error
+      e.error ||
+      a.error
     );
 
 
@@ -1379,6 +1424,10 @@ async function loadAdmin(){
     e.data || [];
 
 
+  archivedMembers =
+    a.data || [];
+
+
   populateMemberZoneDropdown();
 
   renderAdminLists();
@@ -1401,6 +1450,9 @@ function renderAdminLists(){
 
   const eventList=
     $('adminEventList');
+
+    const recoveryList=
+    $('archivedMemberList');
 
 
   if(requestList){
@@ -1728,6 +1780,113 @@ function renderAdminLists(){
 
   }
 
+    if(recoveryList){
+
+    if(currentAdminRole !== 'super_admin'){
+
+      recoveryList.innerHTML='';
+
+    }else{
+
+      recoveryList.innerHTML=
+
+        archivedMembers.length
+
+        ?
+
+        `<div class="admin-table">
+
+          ${archivedMembers.map(m=>{
+
+            const archivedDate=
+              m.archived_at
+                ? new Date(
+                    m.archived_at
+                  ).toLocaleString()
+                : 'Unknown';
+
+            return `
+
+              <div class="admin-row">
+
+                <div>
+
+                  <strong>
+                    ${esc(m.id)}
+                  </strong>
+
+                  · ${esc(m.name)}
+
+                  <br>
+
+                  <small>
+
+                    ${iconSvg('pin')}
+                    ${esc(m.zone)}
+
+                    ·
+
+                    ${iconSvg('badge')}
+                    ${esc(
+                      m.position || 'Member'
+                    )}
+
+                    <br>
+
+                    Archived:
+                    ${esc(archivedDate)}
+
+                    ${
+                      m.archive_reason
+                        ? `
+                          <br>
+                          Reason:
+                          ${esc(m.archive_reason)}
+                        `
+                        : ''
+                    }
+
+                  </small>
+
+                </div>
+
+
+                <div class="row-actions">
+
+                  <button
+                    class="ghost-btn"
+                    data-restore-member="${esc(m.id)}"
+                  >
+                    Restore
+                  </button>
+
+                  <button
+                    class="danger small"
+                    data-permanent-delete-member="${esc(m.id)}"
+                  >
+                    Permanently Delete
+                  </button>
+
+                </div>
+
+              </div>
+
+            `;
+
+          }).join('')}
+
+        </div>`
+
+        :
+
+        `<p class="muted">
+          No archived members.
+        </p>`;
+
+    }
+
+  }
+
 
   document
     .querySelectorAll(
@@ -1840,6 +1999,30 @@ function renderAdminLists(){
           )
     );
 
+  document
+    .querySelectorAll(
+      '[data-restore-member]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          restoreMember(
+            b.dataset.restoreMember
+          )
+    );
+
+
+  document
+    .querySelectorAll(
+      '[data-permanent-delete-member]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          permanentlyDeleteMember(
+            b.dataset.permanentDeleteMember
+          )
+    );
 }
 
 
@@ -2328,6 +2511,190 @@ async function archiveMember(id){
   await loadPublic();
 }
 
+/* =========================
+   RESTORE ARCHIVED MEMBER
+========================= */
+
+async function restoreMember(id){
+
+  if(!sb) return;
+
+
+  if(currentAdminRole !== 'super_admin'){
+
+    alert(
+      'Only a Super Admin can restore archived members.'
+    );
+
+    return;
+  }
+
+
+  const member=
+    archivedMembers.find(
+      m=>String(m.id)===String(id)
+    );
+
+
+  const memberName=
+    member
+      ? member.name
+      : id;
+
+
+  if(
+    !confirm(
+      `Restore ${memberName} (${id}) to active Member Records?`
+    )
+  ){
+
+    return;
+  }
+
+
+  message(
+    'recoveryMessage',
+    'Restoring member...'
+  );
+
+
+  const {error}=
+    await sb.rpc(
+      'restore_member',
+      {
+        p_member_id:String(id)
+      }
+    );
+
+
+  if(error){
+
+    message(
+      'recoveryMessage',
+      error.message,
+      'error'
+    );
+
+    return;
+  }
+
+
+  message(
+    'recoveryMessage',
+    `${memberName} has been restored successfully.`,
+    'ok'
+  );
+
+
+  await loadAdmin();
+
+  await loadPublic();
+}
+
+
+/* =========================
+   PERMANENTLY DELETE MEMBER
+========================= */
+
+async function permanentlyDeleteMember(id){
+
+  if(!sb) return;
+
+
+  if(currentAdminRole !== 'super_admin'){
+
+    alert(
+      'Only a Super Admin can permanently delete members.'
+    );
+
+    return;
+  }
+
+
+  const member=
+    archivedMembers.find(
+      m=>String(m.id)===String(id)
+    );
+
+
+  const memberName=
+    member
+      ? member.name
+      : id;
+
+
+  if(
+    !confirm(
+      `Permanently delete ${memberName} (${id})? This cannot be undone.`
+    )
+  ){
+
+    return;
+  }
+
+
+  const confirmation=
+    prompt(
+      `Type the Member ID ${id} to confirm permanent deletion:`
+    );
+
+
+  if(confirmation === null){
+
+    return;
+  }
+
+
+  if(confirmation.trim() !== String(id)){
+
+    message(
+      'recoveryMessage',
+      'Permanent deletion cancelled because the Member ID did not match.',
+      'error'
+    );
+
+    return;
+  }
+
+
+  message(
+    'recoveryMessage',
+    'Permanently deleting member...'
+  );
+
+
+  const {error}=
+    await sb.rpc(
+      'permanently_delete_member',
+      {
+        p_member_id:String(id)
+      }
+    );
+
+
+  if(error){
+
+    message(
+      'recoveryMessage',
+      error.message,
+      'error'
+    );
+
+    return;
+  }
+
+
+  message(
+    'recoveryMessage',
+    `${memberName} has been permanently deleted.`,
+    'ok'
+  );
+
+
+  await loadAdmin();
+
+  await loadPublic();
+}
 
 /* =========================
    DELETE ZONE
@@ -2514,9 +2881,13 @@ if($('verifyBtn')){
           'status',
           'verified'
         )
-        .eq(
+                .eq(
           'public_visible',
           true
+        )
+        .is(
+          'archived_at',
+          null
         )
         .maybeSingle();
 
