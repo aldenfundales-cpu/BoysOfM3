@@ -348,12 +348,75 @@
         required
       >
 
-      <button class="btn">
-        Log In
-      </button>
+      <div class="form-actions">
+
+        <button class="btn">
+          Log In
+        </button>
+
+        <button
+          type="button"
+          class="ghost-btn"
+          id="forgotPasswordBtn"
+        >
+          Forgot Password?
+        </button>
+
+      </div>
 
       <p
         id="loginMessage"
+        class="form-message"
+        aria-live="polite"
+      ></p>
+
+    </form>
+
+  </div>
+
+
+  <!-- PASSWORD RECOVERY -->
+
+  <div
+    id="resetPasswordPanel"
+    class="panel admin-auth"
+    hidden
+  >
+
+    <h3>
+      Set New Password
+    </h3>
+
+    <p class="muted">
+      Enter a new password for your BOM3 administrator account.
+    </p>
+
+    <form id="resetPasswordForm">
+
+      <input
+        id="resetNewPassword"
+        type="password"
+        placeholder="New password"
+        autocomplete="new-password"
+        minlength="8"
+        required
+      >
+
+      <input
+        id="resetConfirmPassword"
+        type="password"
+        placeholder="Confirm new password"
+        autocomplete="new-password"
+        minlength="8"
+        required
+      >
+
+      <button class="btn">
+        Save New Password
+      </button>
+
+      <p
+        id="resetPasswordMessage"
         class="form-message"
         aria-live="polite"
       ></p>
@@ -380,14 +443,92 @@
 
       </div>
 
-      <button
-        class="danger"
-        id="logoutBtn"
-      >
-        Log Out
-      </button>
+      <div class="form-actions">
+
+        <button
+          type="button"
+          class="ghost-btn"
+          id="changePasswordBtn"
+        >
+          Change Password
+        </button>
+
+        <button
+          type="button"
+          class="danger"
+          id="logoutBtn"
+        >
+          Log Out
+        </button>
+
+      </div>
 
     </div>
+
+
+    <form
+      id="changePasswordForm"
+      class="panel"
+      hidden
+    >
+
+      <div class="section-head">
+
+        <div>
+          <p class="eyebrow">ACCOUNT SECURITY</p>
+          <h3>Change My Password</h3>
+          <p class="muted">
+            Confirm your current password, then choose a new password.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="ghost-btn"
+          id="changePasswordCancel"
+        >
+          Close
+        </button>
+
+      </div>
+
+      <input
+        id="currentPassword"
+        type="password"
+        placeholder="Current password"
+        autocomplete="current-password"
+        required
+      >
+
+      <input
+        id="newPassword"
+        type="password"
+        placeholder="New password"
+        autocomplete="new-password"
+        minlength="8"
+        required
+      >
+
+      <input
+        id="confirmNewPassword"
+        type="password"
+        placeholder="Confirm new password"
+        autocomplete="new-password"
+        minlength="8"
+        required
+      >
+
+      <button class="btn">
+        Update Password
+      </button>
+
+      <p
+        id="changePasswordMessage"
+        class="form-message"
+        aria-live="polite"
+      ></p>
+
+    </form>
 
 
     <div class="admin-grid">
