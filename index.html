@@ -246,11 +246,15 @@
 
   <form id="requestForm" class="panel">
 
-    <input
-      id="requestMemberId"
-      placeholder="Badge / Member ID"
-      required
-    >
+   <input
+  id="requestMemberId"
+  type="text"
+  inputmode="numeric"
+  pattern="[0-9]+"
+  placeholder="Badge / Member ID"
+  autocomplete="off"
+  required
+>
 
     <input
       id="requestName"
@@ -269,9 +273,13 @@
       required
     >
 
-    <button class="btn">
-      Submit Request
-    </button>
+   <button
+  class="btn"
+  id="requestSubmit"
+  type="submit"
+>
+  Submit Request
+</button>
 
     <p
       id="requestMessage"
