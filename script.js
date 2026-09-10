@@ -2573,6 +2573,25 @@ if($('verifyInput')){
    MEMBERSHIP REQUEST
 ========================= */
 
+
+/* Member ID: numbers only */
+
+if($('requestMemberId')){
+
+  $('requestMemberId').oninput=
+    e=>{
+
+      e.target.value=
+        e.target.value.replace(
+          /[^0-9]/g,
+          ''
+        );
+
+    };
+
+}
+
+
 if($('requestForm')){
 
   $('requestForm').onsubmit=
@@ -2590,150 +2609,226 @@ if($('requestForm')){
         );
 
         return;
+      }
+
+
+      const submitButton=
+        $('requestSubmit');
+
+
+      if(submitButton){
+
+        submitButton.disabled=true;
+        submitButton.textContent=
+          'Submitting...';
 
       }
 
 
-      const memberId=
-        $('requestMemberId')
-          .value
-          .trim();
+      try{
+
+        const memberId=
+          $('requestMemberId')
+            .value
+            .trim();
 
 
-      const name=
-        $('requestName')
-          .value
-          .trim();
+        const name=
+          $('requestName')
+            .value
+            .trim();
 
 
-      const zone=
-        $('requestZone')
-          .value
-          .trim();
+        const zone=
+          $('requestZone')
+            .value
+            .trim();
 
 
-      const bike=
-        $('requestBike')
-          .value
-          .trim()
-        ||
-        'Mio i 125';
+        const bike=
+          $('requestBike')
+            .value
+            .trim()
+          ||
+          'Mio i 125';
 
 
-      if(
-        !memberId ||
-        !name ||
-        !zone
-      ){
+        if(
+          !memberId ||
+          !name ||
+          !zone
+        ){
+
+          message(
+            'requestMessage',
+            'Please complete all required fields.',
+            'error'
+          );
+
+          return;
+        }
+
+
+        if(!/^[0-9]+$/.test(memberId)){
+
+          message(
+            'requestMessage',
+            'Member ID must contain numbers only.',
+            'error'
+          );
+
+          return;
+        }
+
 
         message(
           'requestMessage',
-          'Please complete all required fields.',
-          'error'
+          'Checking Member ID...'
         );
 
-        return;
 
-      }
+        /* Check if already a verified member */
 
-
-      message(
-        'requestMessage',
-        'Submitting request...'
-      );
-
-
-      const {
-        data:existingMember,
-        error:memberCheckError
-      }=
-      await sb
-        .from('members')
-        .select('id')
-        .eq(
-          'id',
-          memberId
-        )
-        .maybeSingle();
-
-
-      if(memberCheckError){
-
-        message(
-          'requestMessage',
-          'Unable to check the member ID.',
-          'error'
-        );
-
-        return;
-
-      }
-
-
-      if(existingMember){
-
-        message(
-          'requestMessage',
-          'This Member ID is already registered.',
-          'error'
-        );
-
-        return;
-
-      }
-
-
-      const {error}=
+        const {
+          data:existingMember,
+          error:memberCheckError
+        }=
         await sb
-          .from('member_requests')
-          .insert({
-
-            member_id:
-              memberId,
-
-            name:
-              name,
-
-            zone:
-              zone,
-
-            bike:
-              bike,
-
-            status:
-              'pending'
-
-          });
+          .from('members')
+          .select('id')
+          .eq(
+            'id',
+            memberId
+          )
+          .maybeSingle();
 
 
-      if(error){
+        if(memberCheckError){
+
+          message(
+            'requestMessage',
+            'Unable to check the Member ID.',
+            'error'
+          );
+
+          return;
+        }
+
+
+        if(existingMember){
+
+          message(
+            'requestMessage',
+            'This Member ID is already registered.',
+            'error'
+          );
+
+          return;
+        }
+
 
         message(
           'requestMessage',
-          error.message,
-          'error'
+          'Submitting request...'
         );
 
-        return;
+
+        const {error}=
+          await sb
+            .from('member_requests')
+            .insert({
+
+              member_id:
+                memberId,
+
+              name:
+                name,
+
+              zone:
+                zone,
+
+              bike:
+                bike,
+
+              status:
+                'pending'
+
+            });
+
+
+        if(error){
+
+          /* Same ID already has a pending request */
+
+          if(error.code === '23505'){
+
+            message(
+              'requestMessage',
+              'This Member ID already has a pending membership request. Please wait for administrator approval.',
+              'error'
+            );
+
+          }
+
+          /* Database numeric-only protection */
+
+          else if(error.code === '23514'){
+
+            message(
+              'requestMessage',
+              'Member ID must contain numbers only.',
+              'error'
+            );
+
+          }
+
+          else{
+
+            console.error(
+              'Membership request error:',
+              error
+            );
+
+            message(
+              'requestMessage',
+              'Unable to submit the request right now. Please try again.',
+              'error'
+            );
+
+          }
+
+          return;
+        }
+
+
+        message(
+          'requestMessage',
+          'Membership request submitted successfully. Please wait for administrator approval.',
+          'ok'
+        );
+
+
+        $('requestForm').reset();
+
+
+        $('requestBike').value=
+          'Mio i 125';
+
+
+        populateRequestZoneDropdown();
+
+      }finally{
+
+        if(submitButton){
+
+          submitButton.disabled=false;
+
+          submitButton.textContent=
+            'Submit Request';
+
+        }
 
       }
-
-
-      message(
-        'requestMessage',
-        'Membership request submitted successfully. Please wait for administrator approval.',
-        'ok'
-      );
-
-
-      $('requestForm').reset();
-
-
-      $('requestBike').value=
-        'Mio i 125';
-
-
-      populateRequestZoneDropdown();
 
     };
 
