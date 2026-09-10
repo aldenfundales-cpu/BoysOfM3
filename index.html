@@ -371,7 +371,7 @@
 
         <strong id="adminEmail"></strong>
 
-        <span class="tag">
+        <span class="tag" id="adminRoleTag">
           ADMIN
         </span>
 
@@ -552,7 +552,7 @@
         class="panel"
       >
 
-        <h3>
+        <h3 id="zoneFormTitle">
           Add / Edit Zone
         </h3>
 
@@ -818,38 +818,48 @@
     </div>
 
 <!-- =========================
-     MEMBERSHIP REQUESTS
+     ZONE MANAGEMENT
 ========================= -->
 
-<div class="panel admin-list">
+<div class="panel admin-list" id="zoneManagementPanel">
 
   <div class="section-head">
 
     <div>
 
-      <p class="eyebrow">
-        PENDING APPROVAL
+      <p class="eyebrow" id="zoneManagementEyebrow">
+        NATIONWIDE MANAGEMENT
       </p>
 
-      <h3>
-        Membership Requests
+      <h3 id="zoneManagementTitle">
+        Zone Records
       </h3>
 
       <p class="muted">
-        Review membership applications submitted through the website.
+        Open a zone to manage its overview, pending requests, and member records.
       </p>
 
     </div>
 
+    <button
+      class="ghost-btn"
+      id="refreshAdmin"
+      type="button"
+    >
+      Refresh
+    </button>
+
   </div>
 
-  <div id="adminRequestList">
+
+  <div id="zoneManagementList">
 
     <p class="muted">
-      No pending membership requests.
+      No zones available.
     </p>
 
   </div>
+
 
   <p
     id="requestAdminMessage"
@@ -858,55 +868,94 @@
   ></p>
 
 </div>
-    <!-- =========================
-         MEMBER RECORDS
-    ========================= -->
-
-    <div class="panel admin-list">
-
-      <div class="section-head">
-
-        <div>
-
-          <h3>
-            Member Records
-          </h3>
-
-          <p class="muted">
-            Manage online member records.
-          </p>
-
-        </div>
-
-        <button
-          class="ghost-btn"
-          id="refreshAdmin"
-        >
-          Refresh
-        </button>
-
-      </div>
-
-      <div id="adminMemberList"></div>
-
-    </div>
 
 
-    <!-- =========================
-         ZONE RECORDS
-    ========================= -->
+<!-- =========================
+     ADMIN ACCOUNTS
+     SUPER ADMIN ONLY
+========================= -->
 
-    <div class="panel admin-list">
+<div
+  class="panel admin-list"
+  id="adminAccountsPanel"
+  hidden
+>
+
+  <div class="section-head">
+
+    <div>
+
+      <p class="eyebrow">
+        SUPER ADMIN ONLY
+      </p>
 
       <h3>
-        Zone Records
+        Admin Accounts
       </h3>
 
-      <div id="adminZoneList"></div>
+      <p class="muted">
+        View administrator roles and their assigned zones.
+      </p>
 
     </div>
 
-    <!-- =========================
+  </div>
+
+
+  <div id="adminAccountList">
+
+    <p class="muted">
+      No admin accounts found.
+    </p>
+
+  </div>
+
+</div>
+
+
+<!-- =========================
+     ACTIVITY LOG
+     SUPER ADMIN ONLY
+========================= -->
+
+<div
+  class="panel admin-list"
+  id="auditPanel"
+  hidden
+>
+
+  <div class="section-head">
+
+    <div>
+
+      <p class="eyebrow">
+        SUPER ADMIN ONLY
+      </p>
+
+      <h3>
+        Activity Log
+      </h3>
+
+      <p class="muted">
+        Recent protected administrator actions recorded by the system.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div id="auditLogList">
+
+    <p class="muted">
+      No activity has been recorded yet.
+    </p>
+
+  </div>
+
+</div>
+
+<!-- =========================
      TRASH / RECOVERY
      SUPER ADMIN ONLY
 ========================= -->
@@ -959,7 +1008,7 @@
      EVENT RECORDS
 ========================= -->
 
-<div class="panel admin-list">
+<div class="panel admin-list" id="eventRecordsPanel">
 
   <div class="section-head">
 
