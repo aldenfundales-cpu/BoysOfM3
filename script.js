@@ -4010,7 +4010,7 @@ if($('eventCancel')){
 async function uploadZoneImage(
   file,
   bucket,
-  zoneName,
+  zoneId,
   label
 ){
 
@@ -4070,19 +4070,21 @@ async function uploadZoneImage(
   }
 
 
-  const safeZoneName=
-    zoneName
-      .toLowerCase()
-      .replace(
-        /[^a-z0-9]+/g,
-        '-'
-      )
-      .replace(
-        /^-+|-+$/g,
-        ''
-      )
-    ||
-    'zone';
+  const safeZoneId=
+    String(zoneId || '').trim();
+
+
+  if(
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      safeZoneId
+    )
+  ){
+
+    throw new Error(
+      'Unable to determine the secure zone storage folder. Refresh the admin dashboard and try again.'
+    );
+
+  }
 
 
   const uniqueName=
@@ -4092,7 +4094,7 @@ async function uploadZoneImage(
 
 
   const filePath=
-    `${safeZoneName}/${uniqueName}.${extension || 'png'}`;
+    `${safeZoneId}/${uniqueName}.${extension || 'png'}`;
 
 
   const uploadOptions={
@@ -4515,6 +4517,48 @@ if($('zoneForm')){
       }
 
 
+      let editingZone=
+        null;
+
+
+      let targetZoneId=
+        '';
+
+
+      if(original){
+
+        editingZone=
+          adminZones.find(
+            z=>z.name===original
+          );
+
+
+        if(
+          !editingZone ||
+          !editingZone.zone_id
+        ){
+
+          message(
+            'zoneMessage',
+            'The original zone record could not be found. Refresh the admin dashboard and try again.',
+            'error'
+          );
+
+          return;
+        }
+
+
+        targetZoneId=
+          String(editingZone.zone_id);
+
+      }else{
+
+        targetZoneId=
+          crypto.randomUUID();
+
+      }
+
+
       let logoUrl=
         $('zoneLogoUrl')
           ? $('zoneLogoUrl').value.trim()
@@ -4554,7 +4598,7 @@ if($('zoneForm')){
             await uploadZoneImage(
               coverFile,
               'zone-covers',
-              zoneName,
+              targetZoneId,
               'cover photo'
             );
 
@@ -4572,7 +4616,7 @@ if($('zoneForm')){
             await uploadZoneImage(
               logoFile,
               'zone-logos',
-              zoneName,
+              targetZoneId,
               'logo'
             );
 
@@ -4644,27 +4688,6 @@ if($('zoneForm')){
 
       if(original){
 
-        const editingZone=
-          adminZones.find(
-            z=>z.name===original
-          );
-
-
-        if(
-          !editingZone ||
-          !editingZone.zone_id
-        ){
-
-          message(
-            'zoneMessage',
-            'The original zone record could not be found. Refresh the admin dashboard and try again.',
-            'error'
-          );
-
-          return;
-        }
-
-
         result=
           await sb
             .from('zones')
@@ -4681,7 +4704,10 @@ if($('zoneForm')){
         result=
           await sb
             .from('zones')
-            .insert(row)
+            .insert({
+              ...row,
+              zone_id:targetZoneId
+            })
             .select('zone_id')
             .single();
 
