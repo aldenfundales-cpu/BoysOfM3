@@ -108,6 +108,10 @@ let adminRequests = [];
 let adminEvents = [];
 let archivedMembers = [];
 let currentAdminRole = '';
+let currentAdminUserId = '';
+let adminAssignments = [];
+let adminAccounts = [];
+let auditLogs = [];
 
 let selectedZone = '';
 
@@ -312,8 +316,7 @@ function populateMemberZoneDropdown(){
 
 
   const zones =
-    adminZones &&
-    adminZones.length
+    currentAdminRole
       ? adminZones
       : publicZones;
 
@@ -966,6 +969,13 @@ function resetMemberForm(){
   }
 
 
+  if($('memberId')){
+
+    $('memberId').readOnly=false;
+
+  }
+
+
   if($('memberFormTitle')){
 
     $('memberFormTitle').textContent=
@@ -1101,6 +1111,24 @@ function resetZoneForm(){
     ''
   );
 
+
+  if($('zoneFormTitle')){
+
+    $('zoneFormTitle').textContent=
+      currentAdminRole === 'super_admin'
+        ? 'Add / Edit Zone'
+        : 'Edit Assigned Zone';
+
+  }
+
+
+  if(form && currentAdminRole){
+
+    form.hidden=
+      currentAdminRole !== 'super_admin';
+
+  }
+
 }
 
 
@@ -1230,8 +1258,11 @@ async function checkAdmin(){
 function setLoggedOut(){
 
   currentAdminRole='';
-
+  currentAdminUserId='';
   archivedMembers=[];
+  adminAssignments=[];
+  adminAccounts=[];
+  auditLogs=[];
 
 
   if($('loginPanel')){
@@ -1255,20 +1286,39 @@ function setLoggedOut(){
   }
 
 
-  if($('recoveryPanel')){
+  if($('adminRoleTag')){
 
-    $('recoveryPanel').hidden=true;
+    $('adminRoleTag').textContent='ADMIN';
 
   }
 
-}
 
+  [
+    'recoveryPanel',
+    'adminAccountsPanel',
+    'auditPanel',
+    'eventRecordsPanel'
+  ].forEach(id=>{
+
+    if($(id)){
+      $(id).hidden=true;
+    }
+
+  });
+
+}
 
 
 function setLoggedIn(user,admin){
 
   currentAdminRole=
     admin.role || 'zone_admin';
+
+  currentAdminUserId=
+    user.id;
+
+  const isSuper=
+    currentAdminRole === 'super_admin';
 
 
   if($('loginPanel')){
@@ -1295,15 +1345,94 @@ function setLoggedIn(user,admin){
   }
 
 
+  if($('adminRoleTag')){
+
+    $('adminRoleTag').textContent=
+      isSuper
+        ? 'SUPER ADMIN'
+        : 'ZONE ADMIN';
+
+  }
+
+
+  if($('zoneManagementEyebrow')){
+
+    $('zoneManagementEyebrow').textContent=
+      isSuper
+        ? 'NATIONWIDE MANAGEMENT'
+        : 'ASSIGNED ZONES';
+
+  }
+
+
+  if($('zoneManagementTitle')){
+
+    $('zoneManagementTitle').textContent=
+      isSuper
+        ? 'Zone Records'
+        : 'My Zones';
+
+  }
+
+
+  if($('zoneFormTitle')){
+
+    $('zoneFormTitle').textContent=
+      isSuper
+        ? 'Add / Edit Zone'
+        : 'Edit Assigned Zone';
+
+  }
+
+
+  if($('zoneForm')){
+
+    $('zoneForm').hidden=
+      !isSuper;
+
+  }
+
+
+  if($('eventForm')){
+
+    $('eventForm').hidden=
+      !isSuper;
+
+  }
+
+
+  if($('eventRecordsPanel')){
+
+    $('eventRecordsPanel').hidden=
+      !isSuper;
+
+  }
+
+
   if($('recoveryPanel')){
 
     $('recoveryPanel').hidden=
-      currentAdminRole !== 'super_admin';
+      !isSuper;
+
+  }
+
+
+  if($('adminAccountsPanel')){
+
+    $('adminAccountsPanel').hidden=
+      !isSuper;
+
+  }
+
+
+  if($('auditPanel')){
+
+    $('auditPanel').hidden=
+      !isSuper;
 
   }
 
 }
-
 
 
 /* =========================
@@ -1312,72 +1441,169 @@ function setLoggedIn(user,admin){
 
 async function loadAdmin(){
 
-  if(!sb) return;
+  if(!sb || !currentAdminUserId) return;
 
 
-  const [m,z,r,e,a] =
-  await Promise.all([
+  const assignmentResult=
+    await sb
+      .from('admin_zones')
+      .select(
+        'admin_user_id,zone_id'
+      );
 
-    sb
-      .from('members')
-      .select('*')
-      .is(
-        'archived_at',
-        null
-      )
-      .order(
-        'created_at',
-        {
-          ascending:false
-        }
-      ),
 
-    sb
-      .from('zones')
-      .select('*')
-      .order('name'),
+  if(assignmentResult.error){
 
-    sb
-      .from('member_requests')
-      .select('*')
-      .eq(
-        'status',
-        'pending'
-      )
-      .order(
-        'submitted_at',
-        {
-          ascending:true
-        }
-      ),
+    console.error(
+      assignmentResult.error
+    );
 
-    sb
-      .from('events')
-      .select('*')
-      .order(
-        'event_date',
-        {
-          ascending:true,
-          nullsFirst:false
-        }
-      ),
+    message(
+      'loginMessage',
+      'Could not load admin zone assignments.',
+      'error'
+    );
 
-    sb
-      .from('members')
-      .select('*')
-      .not(
-        'archived_at',
-        'is',
-        null
-      )
-      .order(
-        'archived_at',
-        {
-          ascending:false
-        }
-      )
+    return;
+  }
 
-  ]);
+
+  adminAssignments=
+    assignmentResult.data || [];
+
+
+  const isSuper=
+    currentAdminRole === 'super_admin';
+
+
+  const allowedZoneIds=
+    new Set(
+      adminAssignments
+        .filter(a=>
+          a.admin_user_id === currentAdminUserId
+        )
+        .map(a=>
+          String(a.zone_id)
+        )
+    );
+
+
+  const eventPromise=
+    isSuper
+      ? sb
+          .from('events')
+          .select('*')
+          .order(
+            'event_date',
+            {
+              ascending:true,
+              nullsFirst:false
+            }
+          )
+      : Promise.resolve({
+          data:[],
+          error:null
+        });
+
+
+  const archivedPromise=
+    isSuper
+      ? sb
+          .from('members')
+          .select('*')
+          .not(
+            'archived_at',
+            'is',
+            null
+          )
+          .order(
+            'archived_at',
+            {
+              ascending:false
+            }
+          )
+      : Promise.resolve({
+          data:[],
+          error:null
+        });
+
+
+  const adminAccountsPromise=
+    isSuper
+      ? sb
+          .from('admins')
+          .select(
+            'user_id,email,role'
+          )
+          .order('email')
+      : Promise.resolve({
+          data:[],
+          error:null
+        });
+
+
+  const auditPromise=
+    isSuper
+      ? sb
+          .from('audit_logs')
+          .select(
+            'id,created_at,actor_email,action,entity_type,entity_id,zone_id'
+          )
+          .order(
+            'created_at',
+            {
+              ascending:false
+            }
+          )
+          .limit(50)
+      : Promise.resolve({
+          data:[],
+          error:null
+        });
+
+
+  const [m,z,r,e,a,accounts,logs] =
+    await Promise.all([
+
+      sb
+        .from('members')
+        .select('*')
+        .is(
+          'archived_at',
+          null
+        )
+        .order(
+          'created_at',
+          {
+            ascending:false
+          }
+        ),
+
+      sb
+        .from('zones')
+        .select('*')
+        .order('name'),
+
+      sb
+        .from('member_requests')
+        .select('*')
+        .eq(
+          'status',
+          'pending'
+        )
+        .order(
+          'submitted_at',
+          {
+            ascending:true
+          }
+        ),
+
+      eventPromise,
+      archivedPromise,
+      adminAccountsPromise,
+      auditPromise
+
+    ]);
 
 
   if(
@@ -1385,7 +1611,9 @@ async function loadAdmin(){
     z.error ||
     r.error ||
     e.error ||
-    a.error
+    a.error ||
+    accounts.error ||
+    logs.error
   ){
 
     console.error(
@@ -1393,7 +1621,9 @@ async function loadAdmin(){
       z.error ||
       r.error ||
       e.error ||
-      a.error
+      a.error ||
+      accounts.error ||
+      logs.error
     );
 
 
@@ -1403,29 +1633,72 @@ async function loadAdmin(){
       'error'
     );
 
-
     return;
   }
 
 
-  adminMembers =
-    m.data || [];
-
-
-  adminZones =
+  const allZones=
     z.data || [];
 
+  const allMembers=
+    m.data || [];
 
-  adminRequests =
+  const allRequests=
     r.data || [];
 
 
-  adminEvents =
-    e.data || [];
+  adminZones=
+    isSuper
+      ? allZones
+      : allZones.filter(z=>
+          allowedZoneIds.has(
+            String(z.zone_id)
+          )
+        );
 
 
-  archivedMembers =
-    a.data || [];
+  adminMembers=
+    isSuper
+      ? allMembers
+      : allMembers.filter(m=>
+          allowedZoneIds.has(
+            String(m.zone_id)
+          )
+        );
+
+
+  adminRequests=
+    isSuper
+      ? allRequests
+      : allRequests.filter(r=>
+          allowedZoneIds.has(
+            String(r.zone_id)
+          )
+        );
+
+
+  adminEvents=
+    isSuper
+      ? e.data || []
+      : [];
+
+
+  archivedMembers=
+    isSuper
+      ? a.data || []
+      : [];
+
+
+  adminAccounts=
+    isSuper
+      ? accounts.data || []
+      : [];
+
+
+  auditLogs=
+    isSuper
+      ? logs.data || []
+      : [];
 
 
   populateMemberZoneDropdown();
@@ -1433,268 +1706,361 @@ async function loadAdmin(){
   renderAdminLists();
 }
 
+
 /* =========================
    ADMIN LISTS
 ========================= */
 
 function renderAdminLists(){
 
-  const memberList=
-    $('adminMemberList');
-
   const zoneList=
-    $('adminZoneList');
-
-  const requestList=
-    $('adminRequestList');
+    $('zoneManagementList');
 
   const eventList=
     $('adminEventList');
 
-    const recoveryList=
+  const recoveryList=
     $('archivedMemberList');
 
+  const adminAccountList=
+    $('adminAccountList');
 
-  if(requestList){
+  const auditList=
+    $('auditLogList');
 
-    requestList.innerHTML=
-
-      adminRequests.length
-
-      ?
-
-      `<div class="admin-table">
-
-        ${adminRequests.map(r=>`
-
-          <div class="admin-row">
-
-            <div>
-
-              <strong>
-                ${esc(r.member_id)}
-              </strong>
-
-              · ${esc(r.name)}
-
-              <br>
-
-              <small>
-
-                ${iconSvg('pin')}
-                ${esc(r.zone)}
-
-                ·
-
-                ${iconSvg('bike')}
-                ${esc(r.bike)}
-
-              </small>
-
-            </div>
-
-
-            <div class="row-actions">
-
-              <button
-                class="btn small"
-                data-approve-request="${r.id}"
-              >
-                Approve
-              </button>
-
-              <button
-                class="danger small"
-                data-reject-request="${r.id}"
-              >
-                Reject
-              </button>
-
-            </div>
-
-          </div>
-
-        `).join('')}
-
-      </div>`
-
-      :
-
-      `<p class="muted">
-        No pending membership requests.
-      </p>`;
-
-  }
-
-
-  if(memberList){
-
-    memberList.innerHTML=
-
-      adminMembers.length
-
-      ?
-
-      `<div class="admin-table">
-
-        ${adminMembers.map(m=>`
-
-          <div class="admin-row">
-
-            <div>
-
-              <strong>
-                ${esc(m.id)}
-              </strong>
-
-              · ${esc(m.name)}
-
-              <br>
-
-              <small>
-
-                ${iconSvg('pin')}
-                ${esc(m.zone)}
-
-                ·
-
-                ${iconSvg('badge')}
-                ${esc(m.position)}
-
-                ·
-
-                ${esc(m.status)}
-
-                ·
-
-                ${
-                  m.public_visible
-                    ? 'Public'
-                    : 'Hidden'
-                }
-
-              </small>
-
-            </div>
-
-
-            <div class="row-actions">
-
-              <button
-                class="ghost-btn"
-                data-edit-member="${esc(m.id)}"
-              >
-                Edit
-              </button>
-
-          <button
-  class="danger small"
-  data-archive-member="${esc(m.id)}"
->
-  Archive
-</button>
-
-            </div>
-
-          </div>
-
-        `).join('')}
-
-      </div>`
-
-      :
-
-      `<p class="muted">
-        No members in the database yet.
-      </p>`;
-
-  }
+  const isSuper=
+    currentAdminRole === 'super_admin';
 
 
   if(zoneList){
 
     zoneList.innerHTML=
-
       adminZones.length
 
       ?
 
-      `<div class="admin-table">
+      adminZones.map(z=>{
 
-        ${adminZones.map(z=>`
+        const zoneMembers=
+          adminMembers.filter(m=>
+            String(m.zone_id) ===
+            String(z.zone_id)
+          );
 
-          <div class="admin-row">
+        const zoneRequests=
+          adminRequests.filter(r=>
+            String(r.zone_id) ===
+            String(z.zone_id)
+          );
 
-            <div>
+
+        return `
+
+          <details class="panel admin-list">
+
+            <summary>
 
               <strong>
                 ${esc(z.name)}
               </strong>
 
-              <br>
+              &nbsp;
 
-              <small>
+              <span class="tag">
+                ${zoneRequests.length} Requests
+              </span>
 
-                ${iconSvg('pin')}
-                ${esc(z.location)}
+              <span class="tag">
+                ${zoneMembers.length} Members
+              </span>
 
-                <br>
-
-                ${iconSvg('crown')}
-                Zone Leader:
-                ${esc(
-                  z.leader || '—'
-                )}
-
-                <br>
-
-                ${iconSvg('star')}
-                Vice Leader:
-                ${esc(
-                  z.vice_leader || '—'
-                )}
-
-                <br>
-
-                ${iconSvg('shield')}
-                Admins:
-                ${esc(
-                  z.admins || '—'
-                )}
-
-              </small>
-
-            </div>
+            </summary>
 
 
-            <div class="row-actions">
+            <div class="form-actions">
 
               <button
-                class="ghost-btn"
-                data-edit-zone="${esc(z.name)}"
+                type="button"
+                class="ghost-btn small"
+                data-zone-tab="overview"
+                data-zone-id="${esc(z.zone_id)}"
               >
-                Edit
+                Overview
               </button>
 
               <button
-                class="danger small"
-                data-delete-zone="${esc(z.name)}"
+                type="button"
+                class="ghost-btn small"
+                data-zone-tab="requests"
+                data-zone-id="${esc(z.zone_id)}"
               >
-                Delete
+                Requests ${zoneRequests.length}
+              </button>
+
+              <button
+                type="button"
+                class="ghost-btn small"
+                data-zone-tab="members"
+                data-zone-id="${esc(z.zone_id)}"
+              >
+                Members ${zoneMembers.length}
               </button>
 
             </div>
 
-          </div>
 
-        `).join('')}
+            <div
+              data-zone-pane="overview"
+              data-zone-id="${esc(z.zone_id)}"
+            >
 
-      </div>`
+              <div class="admin-table">
+
+                <div class="admin-row">
+
+                  <div>
+
+                    <strong>
+                      ${esc(z.name)}
+                    </strong>
+
+                    <br>
+
+                    <small>
+
+                      ${iconSvg('pin')}
+                      ${esc(z.location)}
+
+                      <br>
+
+                      ${iconSvg('crown')}
+                      Zone Leader:
+                      ${esc(z.leader || 'TBA')}
+
+                      <br>
+
+                      ${iconSvg('star')}
+                      Vice Leader:
+                      ${esc(z.vice_leader || 'TBA')}
+
+                      <br>
+
+                      ${iconSvg('shield')}
+                      Admins:
+                      ${esc(z.admins || 'TBA')}
+
+                      <br>
+
+                      Status:
+                      ${esc(z.status || 'active')}
+
+                    </small>
+
+                  </div>
+
+
+                  <div class="row-actions">
+
+                    <button
+                      type="button"
+                      class="ghost-btn"
+                      data-edit-zone="${esc(z.name)}"
+                    >
+                      Edit Zone
+                    </button>
+
+                    ${
+                      isSuper
+                        ? `
+                          <button
+                            type="button"
+                            class="danger small"
+                            data-delete-zone="${esc(z.name)}"
+                          >
+                            Delete Zone
+                          </button>
+                        `
+                        : ''
+                    }
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            <div
+              data-zone-pane="requests"
+              data-zone-id="${esc(z.zone_id)}"
+              hidden
+            >
+
+              ${
+                zoneRequests.length
+
+                ? `
+                  <div class="admin-table">
+
+                    ${zoneRequests.map(r=>`
+
+                      <div class="admin-row">
+
+                        <div>
+
+                          <strong>
+                            ${esc(r.member_id)}
+                          </strong>
+
+                          · ${esc(r.name)}
+
+                          <br>
+
+                          <small>
+                            ${iconSvg('bike')}
+                            ${esc(r.bike)}
+                          </small>
+
+                        </div>
+
+
+                        <div class="row-actions">
+
+                          <button
+                            type="button"
+                            class="btn small"
+                            data-approve-request="${r.id}"
+                          >
+                            Approve
+                          </button>
+
+                          <button
+                            type="button"
+                            class="danger small"
+                            data-reject-request="${r.id}"
+                          >
+                            Reject
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    `).join('')}
+
+                  </div>
+                `
+
+                : `
+                  <p class="muted">
+                    No pending requests for this zone.
+                  </p>
+                `
+              }
+
+            </div>
+
+
+            <div
+              data-zone-pane="members"
+              data-zone-id="${esc(z.zone_id)}"
+              hidden
+            >
+
+              ${
+                zoneMembers.length
+
+                ? `
+                  <div class="admin-table">
+
+                    ${zoneMembers.map(m=>`
+
+                      <div class="admin-row">
+
+                        <div>
+
+                          <strong>
+                            ${esc(m.id)}
+                          </strong>
+
+                          · ${esc(m.name)}
+
+                          <br>
+
+                          <small>
+
+                            ${iconSvg('badge')}
+                            ${esc(m.position)}
+
+                            ·
+
+                            ${esc(m.status)}
+
+                            ·
+
+                            ${
+                              m.public_visible
+                                ? 'Public'
+                                : 'Hidden'
+                            }
+
+                          </small>
+
+                        </div>
+
+
+                        <div class="row-actions">
+
+                          <button
+                            type="button"
+                            class="ghost-btn"
+                            data-edit-member="${esc(m.id)}"
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            type="button"
+                            class="danger small"
+                            data-archive-member="${esc(m.id)}"
+                          >
+                            Archive
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    `).join('')}
+
+                  </div>
+                `
+
+                : `
+                  <p class="muted">
+                    No member records for this zone.
+                  </p>
+                `
+              }
+
+            </div>
+
+          </details>
+
+        `;
+
+      }).join('')
 
       :
 
       `<p class="muted">
-        No zones in the database yet.
+        ${
+          isSuper
+            ? 'No zones in the database yet.'
+            : 'No zones are assigned to this admin account.'
+        }
       </p>`;
 
   }
@@ -1703,8 +2069,7 @@ function renderAdminLists(){
   if(eventList){
 
     eventList.innerHTML=
-
-      adminEvents.length
+      isSuper && adminEvents.length
 
       ?
 
@@ -1725,23 +2090,17 @@ function renderAdminLists(){
               <small>
 
                 ${iconSvg('calendar')}
-                ${formatDate(
-                  e.event_date
-                )}
+                ${formatDate(e.event_date)}
 
                 ·
 
                 ${iconSvg('clock')}
-                ${esc(
-                  e.event_time || 'TBA'
-                )}
+                ${esc(e.event_time || 'TBA')}
 
                 ·
 
                 ${iconSvg('pin')}
-                ${esc(
-                  e.location || 'TBA'
-                )}
+                ${esc(e.location || 'TBA')}
 
               </small>
 
@@ -1751,6 +2110,7 @@ function renderAdminLists(){
             <div class="row-actions">
 
               <button
+                type="button"
                 class="ghost-btn"
                 data-edit-event="${e.id}"
               >
@@ -1758,6 +2118,7 @@ function renderAdminLists(){
               </button>
 
               <button
+                type="button"
                 class="danger small"
                 data-delete-event="${e.id}"
               >
@@ -1780,112 +2141,307 @@ function renderAdminLists(){
 
   }
 
-    if(recoveryList){
 
-    if(currentAdminRole !== 'super_admin'){
+  if(recoveryList){
 
-      recoveryList.innerHTML='';
+    recoveryList.innerHTML=
+      isSuper && archivedMembers.length
 
-    }else{
+      ?
 
-      recoveryList.innerHTML=
+      `<div class="admin-table">
 
-        archivedMembers.length
+        ${archivedMembers.map(m=>{
 
-        ?
+          const archivedDate=
+            m.archived_at
+              ? new Date(
+                  m.archived_at
+                ).toLocaleString()
+              : 'Unknown';
 
-        `<div class="admin-table">
+          return `
 
-          ${archivedMembers.map(m=>{
+            <div class="admin-row">
 
-            const archivedDate=
-              m.archived_at
-                ? new Date(
-                    m.archived_at
-                  ).toLocaleString()
-                : 'Unknown';
+              <div>
 
-            return `
+                <strong>
+                  ${esc(m.id)}
+                </strong>
 
-              <div class="admin-row">
+                · ${esc(m.name)}
 
-                <div>
+                <br>
 
-                  <strong>
-                    ${esc(m.id)}
-                  </strong>
+                <small>
 
-                  · ${esc(m.name)}
+                  ${iconSvg('pin')}
+                  ${esc(m.zone)}
+
+                  ·
+
+                  ${iconSvg('badge')}
+                  ${esc(m.position || 'Member')}
 
                   <br>
 
-                  <small>
+                  Archived:
+                  ${esc(archivedDate)}
 
-                    ${iconSvg('pin')}
-                    ${esc(m.zone)}
+                  ${
+                    m.archive_reason
+                      ? `
+                        <br>
+                        Reason:
+                        ${esc(m.archive_reason)}
+                      `
+                      : ''
+                  }
 
-                    ·
-
-                    ${iconSvg('badge')}
-                    ${esc(
-                      m.position || 'Member'
-                    )}
-
-                    <br>
-
-                    Archived:
-                    ${esc(archivedDate)}
-
-                    ${
-                      m.archive_reason
-                        ? `
-                          <br>
-                          Reason:
-                          ${esc(m.archive_reason)}
-                        `
-                        : ''
-                    }
-
-                  </small>
-
-                </div>
-
-
-                <div class="row-actions">
-
-                  <button
-                    class="ghost-btn"
-                    data-restore-member="${esc(m.id)}"
-                  >
-                    Restore
-                  </button>
-
-                  <button
-                    class="danger small"
-                    data-permanent-delete-member="${esc(m.id)}"
-                  >
-                    Permanently Delete
-                  </button>
-
-                </div>
+                </small>
 
               </div>
 
-            `;
 
-          }).join('')}
+              <div class="row-actions">
 
-        </div>`
+                <button
+                  type="button"
+                  class="ghost-btn"
+                  data-restore-member="${esc(m.id)}"
+                >
+                  Restore
+                </button>
 
-        :
+                <button
+                  type="button"
+                  class="danger small"
+                  data-permanent-delete-member="${esc(m.id)}"
+                >
+                  Permanently Delete
+                </button>
 
-        `<p class="muted">
-          No archived members.
-        </p>`;
+              </div>
 
-    }
+            </div>
+
+          `;
+
+        }).join('')}
+
+      </div>`
+
+      :
+
+      `<p class="muted">
+        No archived members.
+      </p>`;
 
   }
+
+
+  if(adminAccountList){
+
+    adminAccountList.innerHTML=
+      isSuper && adminAccounts.length
+
+      ?
+
+      `<div class="admin-table">
+
+        ${adminAccounts.map(a=>{
+
+          const assignedZoneNames=
+            a.role === 'super_admin'
+              ? ['All zones']
+              : adminAssignments
+                  .filter(x=>
+                    x.admin_user_id === a.user_id
+                  )
+                  .map(x=>{
+
+                    const zone=
+                      adminZones.find(z=>
+                        String(z.zone_id) ===
+                        String(x.zone_id)
+                      );
+
+                    return zone
+                      ? zone.name
+                      : null;
+
+                  })
+                  .filter(Boolean);
+
+
+          return `
+
+            <div class="admin-row">
+
+              <div>
+
+                <strong>
+                  ${esc(a.email || a.user_id)}
+                </strong>
+
+                <br>
+
+                <small>
+
+                  Role:
+                  ${esc(
+                    a.role === 'super_admin'
+                      ? 'Super Admin'
+                      : 'Zone Admin'
+                  )}
+
+                  <br>
+
+                  Zones:
+                  ${esc(
+                    assignedZoneNames.length
+                      ? assignedZoneNames.join(', ')
+                      : 'No zone assignment'
+                  )}
+
+                </small>
+
+              </div>
+
+            </div>
+
+          `;
+
+        }).join('')}
+
+      </div>`
+
+      :
+
+      `<p class="muted">
+        No admin accounts found.
+      </p>`;
+
+  }
+
+
+  if(auditList){
+
+    auditList.innerHTML=
+      isSuper && auditLogs.length
+
+      ?
+
+      `<div class="admin-table">
+
+        ${auditLogs.map(log=>{
+
+          const zone=
+            adminZones.find(z=>
+              String(z.zone_id) ===
+              String(log.zone_id)
+            );
+
+          const action=
+            String(log.action || '')
+              .replace(/_/g,' ');
+
+          const when=
+            log.created_at
+              ? new Date(
+                  log.created_at
+                ).toLocaleString()
+              : 'Unknown';
+
+
+          return `
+
+            <div class="admin-row">
+
+              <div>
+
+                <strong>
+                  ${esc(action)}
+                </strong>
+
+                · ${esc(log.entity_type || 'record')}
+
+                ${
+                  log.entity_id
+                    ? ` · ${esc(log.entity_id)}`
+                    : ''
+                }
+
+                <br>
+
+                <small>
+
+                  ${esc(log.actor_email || 'System / Admin')}
+
+                  · ${esc(when)}
+
+                  ${
+                    zone
+                      ? ` · ${iconSvg('pin')} ${esc(zone.name)}`
+                      : ''
+                  }
+
+                </small>
+
+              </div>
+
+            </div>
+
+          `;
+
+        }).join('')}
+
+      </div>`
+
+      :
+
+      `<p class="muted">
+        No activity has been recorded yet.
+      </p>`;
+
+  }
+
+
+  document
+    .querySelectorAll(
+      '[data-zone-tab]'
+    )
+    .forEach(b=>{
+
+      b.onclick=()=>{
+
+        const zoneId=
+          b.dataset.zoneId;
+
+        const tab=
+          b.dataset.zoneTab;
+
+        document
+          .querySelectorAll(
+            '[data-zone-pane]'
+          )
+          .forEach(p=>{
+
+            if(
+              p.dataset.zoneId === zoneId
+            ){
+
+              p.hidden=
+                p.dataset.zonePane !== tab;
+
+            }
+
+          });
+
+      };
+
+    });
 
 
   document
@@ -1901,17 +2457,17 @@ function renderAdminLists(){
     );
 
 
- document
-  .querySelectorAll(
-    '[data-archive-member]'
-  )
-  .forEach(
-    b=>
-      b.onclick=()=>
-        archiveMember(
-          b.dataset.archiveMember
-        )
-  );
+  document
+    .querySelectorAll(
+      '[data-archive-member]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          archiveMember(
+            b.dataset.archiveMember
+          )
+    );
 
 
   document
@@ -1999,6 +2555,7 @@ function renderAdminLists(){
           )
     );
 
+
   document
     .querySelectorAll(
       '[data-restore-member]'
@@ -2023,6 +2580,7 @@ function renderAdminLists(){
             b.dataset.permanentDeleteMember
           )
     );
+
 }
 
 
@@ -2184,6 +2742,10 @@ function editMember(id){
 
   $('memberId').value=
     m.id;
+
+
+  $('memberId').readOnly=
+    true;
 
 
   $('memberName').value=
@@ -2358,6 +2920,23 @@ function editZone(name){
 
   $('zoneCancel').hidden=
     false;
+
+
+  if($('zoneForm')){
+
+    $('zoneForm').hidden=false;
+
+  }
+
+
+  if($('zoneFormTitle')){
+
+    $('zoneFormTitle').textContent=
+      currentAdminRole === 'super_admin'
+        ? 'Edit Zone'
+        : 'Edit Assigned Zone';
+
+  }
 
 
   $('zoneForm').scrollIntoView({
@@ -2702,6 +3281,16 @@ async function permanentlyDeleteMember(id){
 
 async function deleteZone(name){
 
+  if(currentAdminRole !== 'super_admin'){
+
+    alert(
+      'Only a Super Admin can delete zones.'
+    );
+
+    return;
+  }
+
+
   if(
     !confirm(
       `Delete zone ${name}?`
@@ -2745,6 +3334,16 @@ async function deleteZone(name){
 ========================= */
 
 async function deleteEvent(id){
+
+  if(currentAdminRole !== 'super_admin'){
+
+    alert(
+      'Only a Super Admin can delete events.'
+    );
+
+    return;
+  }
+
 
   if(
     !confirm(
@@ -3677,7 +4276,7 @@ if($('memberForm')){
 
 
       const availableZones=
-        adminZones && adminZones.length
+        currentAdminRole
           ? adminZones
           : publicZones;
 
@@ -3772,72 +4371,49 @@ if($('memberForm')){
         original !== row.id
       ){
 
+        message(
+          'memberMessage',
+          'Member ID cannot be changed while editing. Create a new member record instead.',
+          'error'
+        );
 
-        const {error:e1}=
+        return;
+      }
+
+
+      let result;
+
+
+      if(original){
+
+        result=
           await sb
             .from('members')
-            .insert(row);
-
-
-        if(e1){
-
-          message(
-            'memberMessage',
-            e1.message,
-            'error'
-          );
-
-          return;
-        }
-
-
-        const {error:e2}=
-          await sb
-            .from('members')
-            .delete()
+            .update(row)
             .eq(
               'id',
               original
             );
 
-
-        if(e2){
-
-          message(
-            'memberMessage',
-            `New record saved, but old ID could not be deleted: ${e2.message}`,
-            'error'
-          );
-
-          return;
-        }
-
-
       }else{
 
-
-        const {error}=
+        result=
           await sb
             .from('members')
-            .upsert(
-              row,
-              {
-                onConflict:'id'
-              }
-            );
+            .insert(row);
+
+      }
 
 
-        if(error){
+      if(result.error){
 
-          message(
-            'memberMessage',
-            error.message,
-            'error'
-          );
+        message(
+          'memberMessage',
+          result.error.message,
+          'error'
+        );
 
-          return;
-        }
-
+        return;
       }
 
 
@@ -3878,6 +4454,21 @@ if($('zoneForm')){
         $('zoneOriginalName')
           .value
           .trim();
+
+
+      if(
+        currentAdminRole !== 'super_admin' &&
+        !original
+      ){
+
+        message(
+          'zoneMessage',
+          'Zone Admins can edit assigned zones, but cannot create new zones.',
+          'error'
+        );
+
+        return;
+      }
 
 
       const zoneName=
@@ -4124,6 +4715,18 @@ if($('eventForm')){
 
 
       if(!sb) return;
+
+
+      if(currentAdminRole !== 'super_admin'){
+
+        message(
+          'eventMessage',
+          'Only a Super Admin can create or edit events.',
+          'error'
+        );
+
+        return;
+      }
 
 
       const id=
