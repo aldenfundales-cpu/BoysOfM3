@@ -4031,22 +4031,25 @@ if($('zoneForm')){
       );
 
 
-      if(
-        original &&
-        original !== row.name
-      ){
-
-        const {error:e1}=
-          await sb
-            .from('zones')
-            .insert(row);
+            let result;
 
 
-        if(e1){
+      if(original){
+
+        const editingZone=
+          adminZones.find(
+            z=>z.name===original
+          );
+
+
+        if(
+          !editingZone ||
+          !editingZone.zone_id
+        ){
 
           message(
             'zoneMessage',
-            e1.message,
+            'The original zone record could not be found. Refresh the admin dashboard and try again.',
             'error'
           );
 
@@ -4054,51 +4057,38 @@ if($('zoneForm')){
         }
 
 
-        const {error:e2}=
+        result=
           await sb
             .from('zones')
-            .delete()
+            .update(row)
             .eq(
-              'name',
-              original
-            );
-
-
-        if(e2){
-
-          message(
-            'zoneMessage',
-            `New zone saved, but old zone could not be deleted: ${e2.message}`,
-            'error'
-          );
-
-          return;
-        }
+              'zone_id',
+              editingZone.zone_id
+            )
+            .select('zone_id')
+            .single();
 
       }else{
 
-        const {error}=
+        result=
           await sb
             .from('zones')
-            .upsert(
-              row,
-              {
-                onConflict:'name'
-              }
-            );
+            .insert(row)
+            .select('zone_id')
+            .single();
+
+      }
 
 
-        if(error){
+      if(result.error){
 
-          message(
-            'zoneMessage',
-            error.message,
-            'error'
-          );
+        message(
+          'zoneMessage',
+          result.error.message,
+          'error'
+        );
 
-          return;
-        }
-
+        return;
       }
 
 
