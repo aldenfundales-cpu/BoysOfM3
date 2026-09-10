@@ -176,19 +176,19 @@ async function loadPublic(){
       .order('name'),
 
 
-    sb
-     sb
-  .from('members')
-  .select(
-    'id,name,zone,bike,position,status'
-  )
-  .eq('status','verified')
-  .eq('public_visible',true)
-  .is(
-    'archived_at',
-    null
-  )
-  .order('name'),
+       sb
+      .from('members')
+      .select(
+        'id,name,zone,bike,position,status'
+      )
+      .eq('status','verified')
+      .eq('public_visible',true)
+      .is(
+        'archived_at',
+        null
+      )
+      .order('name'),
+  
 
 
     sb
