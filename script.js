@@ -1259,10 +1259,19 @@ function setLoggedOut(){
 
   currentAdminRole='';
   currentAdminUserId='';
+  adminMembers=[];
+  adminZones=[];
+  adminRequests=[];
+  adminEvents=[];
   archivedMembers=[];
   adminAssignments=[];
   adminAccounts=[];
   auditLogs=[];
+
+
+  resetMemberForm();
+  resetZoneForm();
+  resetEventForm();
 
 
   if($('loginPanel')){
@@ -1319,6 +1328,14 @@ function setLoggedIn(user,admin){
 
   const isSuper=
     currentAdminRole === 'super_admin';
+
+
+  if(!isSuper){
+
+    resetZoneForm();
+    resetEventForm();
+
+  }
 
 
   if($('loginPanel')){
@@ -4691,6 +4708,12 @@ if($('zoneForm')){
 
 
       resetZoneForm();
+
+      if(currentAdminRole !== 'super_admin'){
+
+        $('zoneForm').hidden=true;
+
+      }
 
       await loadAdmin();
 
