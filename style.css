@@ -349,23 +349,56 @@ footer{padding:30px 8%;border-top:1px solid var(--line);color:#777;font-size:12p
 }
 
 /* =========================
-   ZONE LOGOS + STATUS
+   ZONE COVER + LOGO
 ========================= */
 
 .zone-card{
+  padding:0;
   overflow:hidden;
+  display:flex;
+  flex-direction:column;
 }
 
-.zone-logo{
-  height:165px;
 
-  display:flex;
-  align-items:center;
-  justify-content:center;
+/* Top image area */
 
-  margin:-22px -22px 18px;
+.zone-media{
+  position:relative;
+  width:100%;
+  height:180px;
+  overflow:hidden;
+  background:#0b0b0b;
+  border-bottom:1px solid #262626;
+  isolation:isolate;
+}
 
-  padding:20px;
+
+/* Cover photo */
+
+.zone-cover-img{
+  position:absolute;
+  inset:-5px;
+  width:calc(100% + 10px);
+  height:calc(100% + 10px);
+
+  object-fit:cover;
+  display:block;
+
+  filter:
+    blur(1.5px)
+    brightness(.48);
+
+  transform:scale(1.04);
+
+  z-index:0;
+}
+
+
+/* Placeholder when no cover exists */
+
+.zone-cover-placeholder{
+  position:absolute;
+  inset:0;
 
   background:
     radial-gradient(
@@ -375,45 +408,100 @@ footer{padding:30px 8%;border-top:1px solid var(--line);color:#777;font-size:12p
       #090909 100%
     );
 
-  border-bottom:1px solid #262626;
+  z-index:0;
 }
 
-.zone-logo img{
+
+/* Extra dark layer so cover never overpowers logo */
+
+.zone-media::after{
+  content:"";
+  position:absolute;
+  inset:0;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(0,0,0,.12),
+      rgba(0,0,0,.32)
+    );
+
+  z-index:1;
+  pointer-events:none;
+}
+
+
+/* Sharp zone logo above cover */
+
+.zone-logo-overlay{
+  position:absolute;
+  inset:0;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:20px;
+
+  z-index:2;
+}
+
+
+.zone-logo-overlay img{
   display:block;
 
-  width:100%;
-  height:100%;
+  width:auto;
+  height:auto;
 
-  max-width:210px;
+  max-width:155px;
+  max-height:125px;
 
   object-fit:contain;
+
+  opacity:1;
+  filter:none;
 }
 
 
-/* ACTIVE / INACTIVE ZONE BADGE */
+/* Zone information below image */
+
+.zone-body{
+  padding:22px;
+  flex:1;
+}
+
+
+/* =========================
+   ACTIVE / INACTIVE STATUS
+========================= */
 
 .zone-status-tag{
   display:inline-flex;
   align-items:center;
   gap:6px;
+
   color:#bbb;
 }
+
 
 .zone-status-dot{
   width:7px;
   height:7px;
   min-width:7px;
-  border-radius:50%;
+
   display:inline-block;
   flex:0 0 7px;
+
+  border-radius:50%;
 }
 
 
-/* Only the dot becomes green */
+/* Green dot ONLY */
 
 .zone-status-tag.active .zone-status-dot{
   background:#22c55e;
-  box-shadow:0 0 6px rgba(34,197,94,.7);
+  box-shadow:
+    0 0 6px rgba(34,197,94,.7);
 }
 
 
@@ -426,73 +514,137 @@ footer{padding:30px 8%;border-top:1px solid var(--line);color:#777;font-size:12p
 
 
 /* =========================
-   ADMIN ZONE LOGO PREVIEW
+   ADMIN COVER PREVIEW
 ========================= */
 
-.zone-logo-admin-preview{
+.zone-cover-admin-preview{
   width:100%;
-  min-height:130px;
+  height:180px;
+
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:14px;
+
+  overflow:hidden;
+
   border:1px solid #2d2d2d;
   background:#0c0c0c;
   border-radius:7px;
 }
 
+
+.zone-cover-admin-preview[hidden]{
+  display:none;
+}
+
+
+.zone-cover-admin-preview img{
+  width:100%;
+  height:100%;
+
+  display:block;
+  object-fit:cover;
+}
+
+
+/* =========================
+   ADMIN LOGO PREVIEW
+========================= */
+
+.zone-logo-admin-preview{
+  width:100%;
+  min-height:130px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:14px;
+
+  border:1px solid #2d2d2d;
+  background:#0c0c0c;
+  border-radius:7px;
+}
+
+
 .zone-logo-admin-preview[hidden]{
   display:none;
 }
 
+
 .zone-logo-admin-preview img{
   display:block;
+
   width:120px;
   height:120px;
+
   max-width:100%;
+
   object-fit:contain;
 }
 
 
-/* Zone status dropdown */
+/* =========================
+   ADMIN ZONE FIELDS
+========================= */
 
 #zoneStatus{
   width:100%;
+
   background:#111;
   color:#fff;
+
   border:1px solid #333;
+
   padding:13px;
+
   border-radius:5px;
   outline:none;
 }
 
 
-/* Zone logo file selector */
-
-#zoneLogoFile{
+#zoneLogoFile,
+#zoneCoverFile{
   width:100%;
 }
 
 
 /* =========================
-   MOBILE ZONE LOGO
+   MOBILE
 ========================= */
 
 @media(max-width:720px){
 
-  .zone-logo{
-    height:145px;
-    margin:-18px -18px 16px;
+  .zone-media{
+    height:165px;
+  }
+
+
+  .zone-logo-overlay{
     padding:18px;
   }
 
-  .zone-logo img{
-    max-width:180px;
+
+  .zone-logo-overlay img{
+    max-width:135px;
+    max-height:110px;
   }
+
+
+  .zone-body{
+    padding:18px;
+  }
+
+
+  .zone-cover-admin-preview{
+    height:160px;
+  }
+
 
   .zone-logo-admin-preview{
     min-height:115px;
   }
+
 
   .zone-logo-admin-preview img{
     width:100px;
