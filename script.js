@@ -115,6 +115,10 @@ let auditLogs = [];
 
 let selectedZone = '';
 
+let passwordRecoveryMode =
+  window.location.hash.includes('type=recovery') ||
+  new URLSearchParams(window.location.search).get('type') === 'recovery';
+
 
 /* =========================
    NOTICES
@@ -1187,12 +1191,70 @@ function resetEventForm(){
 
 
 /* =========================
+   PASSWORD UI HELPERS
+========================= */
+
+function showPasswordRecoveryPanel(){
+
+  passwordRecoveryMode=true;
+
+  if($('loginPanel')){
+    $('loginPanel').hidden=true;
+  }
+
+  if($('dashboard')){
+    $('dashboard').hidden=true;
+  }
+
+  if($('resetPasswordPanel')){
+    $('resetPasswordPanel').hidden=false;
+  }
+
+  const adminSection=$('admin');
+
+  if(adminSection){
+    setTimeout(()=>{
+      adminSection.scrollIntoView({
+        behavior:'smooth',
+        block:'start'
+      });
+    },0);
+  }
+}
+
+
+function hidePasswordPanels(){
+
+  if($('changePasswordForm')){
+    $('changePasswordForm').hidden=true;
+    $('changePasswordForm').reset();
+  }
+
+  if($('resetPasswordPanel')){
+    $('resetPasswordPanel').hidden=true;
+  }
+
+  message('changePasswordMessage','');
+  message('resetPasswordMessage','');
+}
+
+
+/* =========================
    ADMIN AUTH
 ========================= */
 
 async function checkAdmin(){
 
   if(!sb){
+
+    return false;
+
+  }
+
+
+  if(passwordRecoveryMode){
+
+    showPasswordRecoveryPanel();
 
     return false;
 
@@ -1315,6 +1377,9 @@ function setLoggedOut(){
 
   });
 
+
+  hidePasswordPanels();
+
 }
 
 
@@ -1328,6 +1393,16 @@ function setLoggedIn(user,admin){
 
   const isSuper=
     currentAdminRole === 'super_admin';
+
+
+  if($('resetPasswordPanel')){
+    $('resetPasswordPanel').hidden=true;
+  }
+
+
+  if($('changePasswordForm')){
+    $('changePasswordForm').hidden=true;
+  }
 
 
   if(!isSuper){
@@ -3882,6 +3957,333 @@ if($('requestForm')){
 }
 
 /* =========================
+   PASSWORD MANAGEMENT
+========================= */
+
+if($('forgotPasswordBtn')){
+
+  $('forgotPasswordBtn').onclick=
+    async()=>{
+
+      if(!sb) return;
+
+      const email=
+        $('loginEmail')
+          ? $('loginEmail').value.trim()
+          : '';
+
+      if(!email){
+
+        message(
+          'loginMessage',
+          'Enter your admin email first, then click Forgot Password.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      message(
+        'loginMessage',
+        'Sending password reset email...'
+      );
+
+
+      const redirectTo=
+        `${window.location.origin}${window.location.pathname}`;
+
+
+      const {error}=
+        await sb.auth.resetPasswordForEmail(
+          email,
+          {redirectTo}
+        );
+
+
+      if(error){
+
+        message(
+          'loginMessage',
+          error.message,
+          'error'
+        );
+
+        return;
+      }
+
+
+      message(
+        'loginMessage',
+        'Password reset email sent. Open the link in your email to choose a new password.',
+        'ok'
+      );
+
+    };
+}
+
+
+if($('changePasswordBtn')){
+
+  $('changePasswordBtn').onclick=
+    ()=>{
+
+      const form=$('changePasswordForm');
+
+      if(!form) return;
+
+      form.hidden=false;
+
+      message(
+        'changePasswordMessage',
+        ''
+      );
+
+      form.scrollIntoView({
+        behavior:'smooth',
+        block:'center'
+      });
+
+    };
+}
+
+
+if($('changePasswordCancel')){
+
+  $('changePasswordCancel').onclick=
+    ()=>{
+
+      if($('changePasswordForm')){
+        $('changePasswordForm').reset();
+        $('changePasswordForm').hidden=true;
+      }
+
+      message(
+        'changePasswordMessage',
+        ''
+      );
+
+    };
+}
+
+
+if($('changePasswordForm')){
+
+  $('changePasswordForm').onsubmit=
+    async e=>{
+
+      e.preventDefault();
+
+      if(!sb) return;
+
+      const currentPassword=
+        $('currentPassword').value;
+
+      const newPassword=
+        $('newPassword').value;
+
+      const confirmPassword=
+        $('confirmNewPassword').value;
+
+
+      if(newPassword.length < 8){
+
+        message(
+          'changePasswordMessage',
+          'New password must contain at least 8 characters.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      if(newPassword !== confirmPassword){
+
+        message(
+          'changePasswordMessage',
+          'New password and confirmation do not match.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      const {
+        data:{user},
+        error:userError
+      }=
+        await sb.auth.getUser();
+
+
+      if(userError || !user || !user.email){
+
+        message(
+          'changePasswordMessage',
+          'Unable to verify the signed-in administrator.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      message(
+        'changePasswordMessage',
+        'Confirming current password...'
+      );
+
+
+      const {error:verifyError}=
+        await sb.auth.signInWithPassword({
+          email:user.email,
+          password:currentPassword
+        });
+
+
+      if(verifyError){
+
+        message(
+          'changePasswordMessage',
+          'Current password is incorrect.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      message(
+        'changePasswordMessage',
+        'Updating password...'
+      );
+
+
+      const {error:updateError}=
+        await sb.auth.updateUser({
+          password:newPassword
+        });
+
+
+      if(updateError){
+
+        message(
+          'changePasswordMessage',
+          updateError.message,
+          'error'
+        );
+
+        return;
+      }
+
+
+      $('changePasswordForm').reset();
+
+      message(
+        'changePasswordMessage',
+        'Password changed successfully.',
+        'ok'
+      );
+
+    };
+}
+
+
+if($('resetPasswordForm')){
+
+  $('resetPasswordForm').onsubmit=
+    async e=>{
+
+      e.preventDefault();
+
+      if(!sb) return;
+
+      const newPassword=
+        $('resetNewPassword').value;
+
+      const confirmPassword=
+        $('resetConfirmPassword').value;
+
+
+      if(newPassword.length < 8){
+
+        message(
+          'resetPasswordMessage',
+          'New password must contain at least 8 characters.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      if(newPassword !== confirmPassword){
+
+        message(
+          'resetPasswordMessage',
+          'New password and confirmation do not match.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      message(
+        'resetPasswordMessage',
+        'Updating password...'
+      );
+
+
+      const {error}=
+        await sb.auth.updateUser({
+          password:newPassword
+        });
+
+
+      if(error){
+
+        message(
+          'resetPasswordMessage',
+          error.message,
+          'error'
+        );
+
+        return;
+      }
+
+
+      passwordRecoveryMode=false;
+
+      await sb.auth.signOut();
+
+      const cleanUrl=
+        `${window.location.origin}${window.location.pathname}#admin`;
+
+      window.history.replaceState(
+        {},
+        document.title,
+        cleanUrl
+      );
+
+      setLoggedOut();
+
+      if($('loginEmail')){
+        $('loginEmail').focus();
+      }
+
+      message(
+        'loginMessage',
+        'Password reset successfully. Log in with your new password.',
+        'ok'
+      );
+
+    };
+}
+
+
+/* =========================
    ADMIN LOGIN
 ========================= */
 
@@ -3961,6 +4363,8 @@ if($('logoutBtn')){
     async()=>{
 
       if(!sb) return;
+
+      passwordRecoveryMode=false;
 
       await sb.auth.signOut();
 
@@ -4957,7 +5361,21 @@ if(
 
 
   sb.auth.onAuthStateChange(
-    ()=>{
+    (event)=>{
+
+      if(event === 'PASSWORD_RECOVERY'){
+
+        showPasswordRecoveryPanel();
+
+        return;
+      }
+
+
+      if(passwordRecoveryMode){
+
+        return;
+      }
+
 
       checkAdmin();
 
@@ -4965,9 +5383,16 @@ if(
   );
 
 
+  if(passwordRecoveryMode){
+    showPasswordRecoveryPanel();
+  }
+
+
   await loadPublic();
 
-  await checkAdmin();
+  if(!passwordRecoveryMode){
+    await checkAdmin();
+  }
 
 
 })();
