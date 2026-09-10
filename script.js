@@ -171,7 +171,7 @@ async function loadPublic(){
     sb
       .from('zones')
    .select(
-  'name,location,leader,vice_leader,admins,logo_url,cover_url,status'
+  'zone_id,name,location,leader,vice_leader,admins,logo_url,cover_url,status'
 )
       .order('name'),
 
@@ -2627,7 +2627,7 @@ if($('requestForm')){
 
       try{
 
-        const memberId=
+               const memberId=
           $('requestMemberId')
             .value
             .trim();
@@ -2643,6 +2643,12 @@ if($('requestForm')){
           $('requestZone')
             .value
             .trim();
+
+
+        const zoneRecord=
+          publicZones.find(
+            z=>z.name === zone
+          );
 
 
         const bike=
@@ -2662,6 +2668,21 @@ if($('requestForm')){
           message(
             'requestMessage',
             'Please complete all required fields.',
+            'error'
+          );
+
+          return;
+        }
+
+
+        if(
+          !zoneRecord ||
+          !zoneRecord.zone_id
+        ){
+
+          message(
+            'requestMessage',
+            'Unable to match the selected zone. Please refresh the page and try again.',
             'error'
           );
 
@@ -2744,8 +2765,11 @@ if($('requestForm')){
               name:
                 name,
 
-              zone:
+                           zone:
                 zone,
+
+              zone_id:
+                zoneRecord.zone_id,
 
               bike:
                 bike,
@@ -3233,10 +3257,28 @@ if($('memberForm')){
       if(!sb) return;
 
 
-      const original=
+           const original=
         $('memberOriginalId')
           .value
           .trim();
+
+
+      const selectedZoneName=
+        $('memberZone')
+          .value
+          .trim();
+
+
+      const availableZones=
+        adminZones && adminZones.length
+          ? adminZones
+          : publicZones;
+
+
+      const selectedZoneRecord=
+        availableZones.find(
+          z=>z.name === selectedZoneName
+        );
 
 
       const row={
@@ -3252,9 +3294,12 @@ if($('memberForm')){
             .trim(),
 
         zone:
-          $('memberZone')
-            .value
-            .trim(),
+          selectedZoneName,
+
+        zone_id:
+          selectedZoneRecord
+            ? selectedZoneRecord.zone_id
+            : null,
 
         bike:
           $('memberBike')
@@ -3290,6 +3335,18 @@ if($('memberForm')){
         message(
           'memberMessage',
           'Please complete the required fields.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      if(!row.zone_id){
+
+        message(
+          'memberMessage',
+          'Unable to match the selected zone. Refresh the page and try again.',
           'error'
         );
 
