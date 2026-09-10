@@ -177,13 +177,18 @@ async function loadPublic(){
 
 
     sb
-      .from('members')
-      .select(
-        'id,name,zone,bike,position,status'
-      )
-      .eq('status','verified')
-      .eq('public_visible',true)
-      .order('name'),
+     sb
+  .from('members')
+  .select(
+    'id,name,zone,bike,position,status'
+  )
+  .eq('status','verified')
+  .eq('public_visible',true)
+  .is(
+    'archived_at',
+    null
+  )
+  .order('name'),
 
 
     sb
@@ -1283,16 +1288,19 @@ async function loadAdmin(){
   const [m,z,r,e] =
   await Promise.all([
 
-    sb
-      .from('members')
-      .select('*')
-      .order(
-        'created_at',
-        {
-          ascending:false
-        }
-      ),
-
+   sb
+  .from('members')
+  .select('*')
+  .is(
+    'archived_at',
+    null
+  )
+  .order(
+    'created_at',
+    {
+      ascending:false
+    }
+  ),
 
     sb
       .from('zones')
@@ -1527,12 +1535,12 @@ function renderAdminLists(){
                 Edit
               </button>
 
-              <button
-                class="danger small"
-                data-delete-member="${esc(m.id)}"
-              >
-                Delete
-              </button>
+          <button
+  class="danger small"
+  data-archive-member="${esc(m.id)}"
+>
+  Archive
+</button>
 
             </div>
 
@@ -1734,17 +1742,17 @@ function renderAdminLists(){
     );
 
 
-  document
-    .querySelectorAll(
-      '[data-delete-member]'
-    )
-    .forEach(
-      b=>
-        b.onclick=()=>
-          deleteMember(
-            b.dataset.deleteMember
-          )
-    );
+ document
+  .querySelectorAll(
+    '[data-archive-member]'
+  )
+  .forEach(
+    b=>
+      b.onclick=()=>
+        archiveMember(
+          b.dataset.archiveMember
+        )
+  );
 
 
   document
@@ -2250,14 +2258,29 @@ function editEvent(id){
 
 
 /* =========================
-   DELETE MEMBER
+   ARCHIVE MEMBER
 ========================= */
 
-async function deleteMember(id){
+async function archiveMember(id){
+
+  if(!sb) return;
+
+
+  const member=
+    adminMembers.find(
+      m=>String(m.id)===String(id)
+    );
+
+
+  const memberName=
+    member
+      ? member.name
+      : id;
+
 
   if(
     !confirm(
-      `Delete member ${id}? This cannot be undone.`
+      `Archive ${memberName} (${id})? The member can later be restored by a Super Admin.`
     )
   ){
 
@@ -2266,14 +2289,27 @@ async function deleteMember(id){
   }
 
 
+  const reason=
+    prompt(
+      'Reason for archiving this member (optional):'
+    );
+
+
+  if(reason === null){
+
+    return;
+
+  }
+
+
   const {error}=
-    await sb
-      .from('members')
-      .delete()
-      .eq(
-        'id',
-        id
-      );
+    await sb.rpc(
+      'archive_member',
+      {
+        p_member_id:String(id),
+        p_reason:reason.trim() || null
+      }
+    );
 
 
   if(error){
