@@ -352,20 +352,40 @@ footer{padding:30px 8%;border-top:1px solid var(--line);color:#777;font-size:12p
    ZONE LOGOS + STATUS
 ========================= */
 
+.zone-card{
+  overflow:hidden;
+}
+
 .zone-logo{
-  width:100%;
-  min-height:110px;
+  height:165px;
+
   display:flex;
   align-items:center;
   justify-content:center;
-  margin:0 0 14px;
+
+  margin:-22px -22px 18px;
+
+  padding:20px;
+
+  background:
+    radial-gradient(
+      circle at center,
+      #1b1b1b 0%,
+      #101010 55%,
+      #090909 100%
+    );
+
+  border-bottom:1px solid #262626;
 }
 
 .zone-logo img{
   display:block;
-  width:105px;
-  height:105px;
-  max-width:100%;
+
+  width:100%;
+  height:100%;
+
+  max-width:210px;
+
   object-fit:contain;
 }
 
@@ -461,13 +481,13 @@ footer{padding:30px 8%;border-top:1px solid var(--line);color:#777;font-size:12p
 @media(max-width:720px){
 
   .zone-logo{
-    min-height:95px;
-    margin-bottom:12px;
+    height:145px;
+    margin:-18px -18px 16px;
+    padding:18px;
   }
 
   .zone-logo img{
-    width:90px;
-    height:90px;
+    max-width:180px;
   }
 
   .zone-logo-admin-preview{
