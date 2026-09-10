@@ -592,7 +592,66 @@
           placeholder="Admins (separate multiple names with commas)"
         >
 
+                <!-- ZONE STATUS -->
 
+        <label for="zoneStatus">
+          Zone Status
+        </label>
+
+        <select
+          name="status"
+          id="zoneStatus"
+        >
+          <option value="active">
+            Active Zone
+          </option>
+
+          <option value="inactive">
+            Inactive Zone
+          </option>
+        </select>
+
+
+        <!-- ZONE LOGO -->
+
+        <label for="zoneLogoFile">
+          Zone Logo
+        </label>
+
+        <input
+          type="file"
+          id="zoneLogoFile"
+          accept="image/png,image/jpeg,image/webp,image/heic,image/heif,.heic,.heif"
+        >
+
+
+        <!-- CURRENT LOGO URL -->
+
+        <input
+          type="hidden"
+          id="zoneLogoUrl"
+        >
+
+
+        <!-- ZONE LOGO PREVIEW -->
+
+        <div
+          id="zoneLogoPreviewWrap"
+          class="zone-logo-admin-preview"
+          hidden
+        >
+          <img
+            id="zoneLogoPreview"
+            src=""
+            alt="Zone logo preview"
+          >
+        </div>
+
+
+        <p class="muted">
+          Maximum logo size: 10 MB
+        </p>
+        
         <div class="form-actions">
 
           <button class="btn">
