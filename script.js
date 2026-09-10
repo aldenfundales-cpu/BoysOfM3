@@ -170,9 +170,9 @@ async function loadPublic(){
 
     sb
       .from('zones')
-      .select(
-        'name,location,leader,vice_leader,admins'
-      )
+     .select(
+  'name,location,leader,vice_leader,admins,logo_url,status'
+)
       .order('name'),
 
 
@@ -429,6 +429,9 @@ function renderZones(filter=''){
         ).length;
 
 
+      const isActive=
+  (z.status || 'active') === 'active';
+      
       return `
 
         <article
@@ -439,9 +442,31 @@ function renderZones(filter=''){
           title="View ${esc(z.name)} members"
         >
 
-          <span class="tag">
-            ● ACTIVE ZONE
-          </span>
+         ${z.logo_url ? `
+  <div class="zone-logo">
+    <img
+      src="${esc(z.logo_url)}"
+      alt="${esc(z.name)} logo"
+      loading="lazy"
+    >
+  </div>
+` : ''}
+
+
+<span class="tag zone-status-tag ${isActive ? 'active' : 'inactive'}">
+
+  <span
+    class="zone-status-dot"
+    aria-hidden="true"
+  ></span>
+
+  ${
+    isActive
+      ? 'ACTIVE ZONE'
+      : 'INACTIVE ZONE'
+  }
+
+</span>
 
 
           <h3>
@@ -959,6 +984,43 @@ function resetZoneForm(){
   }
 
 
+  if($('zoneStatus')){
+
+    $('zoneStatus').value=
+      'active';
+
+  }
+
+
+  if($('zoneLogoFile')){
+
+    $('zoneLogoFile').value='';
+
+  }
+
+
+  if($('zoneLogoUrl')){
+
+    $('zoneLogoUrl').value='';
+
+  }
+
+
+  if($('zoneLogoPreview')){
+
+    $('zoneLogoPreview').src='';
+
+  }
+
+
+  if($('zoneLogoPreviewWrap')){
+
+    $('zoneLogoPreviewWrap').hidden=
+      true;
+
+  }
+
+
   if($('zoneCancel')){
 
     $('zoneCancel').hidden=true;
@@ -970,6 +1032,7 @@ function resetZoneForm(){
     'zoneMessage',
     ''
   );
+
 }
 
 
@@ -1953,6 +2016,54 @@ function editZone(name){
     z.admins || '';
 
 
+  if($('zoneStatus')){
+
+    $('zoneStatus').value=
+      z.status || 'active';
+
+  }
+
+
+  if($('zoneLogoUrl')){
+
+    $('zoneLogoUrl').value=
+      z.logo_url || '';
+
+  }
+
+
+  if($('zoneLogoFile')){
+
+    $('zoneLogoFile').value='';
+
+  }
+
+
+  if(
+    $('zoneLogoPreview') &&
+    $('zoneLogoPreviewWrap')
+  ){
+
+    if(z.logo_url){
+
+      $('zoneLogoPreview').src=
+        z.logo_url;
+
+      $('zoneLogoPreviewWrap').hidden=
+        false;
+
+    }else{
+
+      $('zoneLogoPreview').src='';
+
+      $('zoneLogoPreviewWrap').hidden=
+        true;
+
+    }
+
+  }
+
+
   $('zoneCancel').hidden=
     false;
 
@@ -1961,6 +2072,7 @@ function editZone(name){
     behavior:'smooth',
     block:'center'
   });
+
 }
 
 
@@ -2649,6 +2761,98 @@ if($('eventCancel')){
 
 
 /* =========================
+   ZONE LOGO PREVIEW
+========================= */
+
+if($('zoneLogoFile')){
+
+  $('zoneLogoFile').onchange=
+    ()=>{
+
+      const file=
+        $('zoneLogoFile').files[0];
+
+
+      if(!file){
+
+        const currentLogo=
+          $('zoneLogoUrl')
+            ? $('zoneLogoUrl').value
+            : '';
+
+
+        if(
+          currentLogo &&
+          $('zoneLogoPreview') &&
+          $('zoneLogoPreviewWrap')
+        ){
+
+          $('zoneLogoPreview').src=
+            currentLogo;
+
+          $('zoneLogoPreviewWrap').hidden=
+            false;
+
+        }else if($('zoneLogoPreviewWrap')){
+
+          $('zoneLogoPreviewWrap').hidden=
+            true;
+
+        }
+
+        return;
+      }
+
+
+      if(
+        file.size >
+        10 * 1024 * 1024
+      ){
+
+        message(
+          'zoneMessage',
+          'Zone logo must be 10 MB or smaller.',
+          'error'
+        );
+
+        $('zoneLogoFile').value='';
+
+        return;
+      }
+
+
+      const previewUrl=
+        URL.createObjectURL(file);
+
+
+      if(
+        $('zoneLogoPreview') &&
+        $('zoneLogoPreviewWrap')
+      ){
+
+        $('zoneLogoPreview').src=
+          previewUrl;
+
+        $('zoneLogoPreviewWrap').hidden=
+          false;
+
+
+        $('zoneLogoPreview').onload=
+          ()=>{
+
+            URL.revokeObjectURL(
+              previewUrl
+            );
+
+          };
+
+      }
+
+    };
+
+}
+
+/* =========================
    SAVE MEMBER
 ========================= */
 
@@ -2836,9 +3040,7 @@ if($('zoneForm')){
   $('zoneForm').onsubmit=
     async e=>{
 
-
       e.preventDefault();
-
 
       if(!sb) return;
 
@@ -2849,17 +3051,206 @@ if($('zoneForm')){
           .trim();
 
 
+      const zoneName=
+        $('zoneName')
+          .value
+          .trim();
+
+
+      const zoneLocation=
+        $('zoneLocation')
+          .value
+          .trim();
+
+
+      if(
+        !zoneName ||
+        !zoneLocation
+      ){
+
+        message(
+          'zoneMessage',
+          'Please complete the required fields.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      let logoUrl=
+        $('zoneLogoUrl')
+          ? $('zoneLogoUrl').value.trim()
+          : '';
+
+
+      const logoFile=
+        $('zoneLogoFile') &&
+        $('zoneLogoFile').files
+          ? $('zoneLogoFile').files[0]
+          : null;
+
+
+      /* =========================
+         UPLOAD ZONE LOGO
+      ========================= */
+
+      if(logoFile){
+
+        const maxSize=
+          10 * 1024 * 1024;
+
+
+        const extension=
+          (
+            logoFile.name
+              .split('.')
+              .pop() || ''
+          ).toLowerCase();
+
+
+        const allowedExtensions=[
+          'png',
+          'jpg',
+          'jpeg',
+          'webp',
+          'heic',
+          'heif'
+        ];
+
+
+        const allowedMimeTypes=[
+          'image/png',
+          'image/jpeg',
+          'image/webp',
+          'image/heic',
+          'image/heif'
+        ];
+
+
+        if(logoFile.size > maxSize){
+
+          message(
+            'zoneMessage',
+            'Zone logo must be 10 MB or smaller.',
+            'error'
+          );
+
+          return;
+        }
+
+
+        if(
+          !allowedMimeTypes.includes(
+            logoFile.type
+          ) &&
+          !allowedExtensions.includes(
+            extension
+          )
+        ){
+
+          message(
+            'zoneMessage',
+            'Please upload a PNG, JPG, JPEG, WebP, HEIC, or HEIF image.',
+            'error'
+          );
+
+          return;
+        }
+
+
+        message(
+          'zoneMessage',
+          'Uploading zone logo...'
+        );
+
+
+        const safeZoneName=
+          zoneName
+            .toLowerCase()
+            .replace(
+              /[^a-z0-9]+/g,
+              '-'
+            )
+            .replace(
+              /^-+|-+$/g,
+              ''
+            )
+          ||
+          'zone';
+
+
+        const uniqueName=
+          `${Date.now()}-${Math.random()
+            .toString(36)
+            .slice(2,8)}`;
+
+
+        const filePath=
+          `${safeZoneName}/${uniqueName}.${extension || 'png'}`;
+
+
+        const uploadOptions={
+          cacheControl:'3600',
+          upsert:false
+        };
+
+
+        if(logoFile.type){
+
+          uploadOptions.contentType=
+            logoFile.type;
+
+        }
+
+
+        const {
+          error:uploadError
+        }=
+          await sb.storage
+            .from('zone-logos')
+            .upload(
+              filePath,
+              logoFile,
+              uploadOptions
+            );
+
+
+        if(uploadError){
+
+          message(
+            'zoneMessage',
+            `Logo upload failed: ${uploadError.message}`,
+            'error'
+          );
+
+          return;
+        }
+
+
+        const {
+          data:publicUrlData
+        }=
+          sb.storage
+            .from('zone-logos')
+            .getPublicUrl(
+              filePath
+            );
+
+
+        logoUrl=
+          publicUrlData.publicUrl;
+
+      }
+
+
       const row={
 
         name:
-          $('zoneName')
-            .value
-            .trim(),
+          zoneName,
 
         location:
-          $('zoneLocation')
-            .value
-            .trim(),
+          zoneLocation,
 
         leader:
           $('zoneLeader')
@@ -2880,29 +3271,22 @@ if($('zoneForm')){
             .value
             .trim()
           ||
-          'TBA'
+          'TBA',
+
+        status:
+          $('zoneStatus')
+            ? $('zoneStatus').value
+            : 'active',
+
+        logo_url:
+          logoUrl || null
 
       };
 
 
-      if(
-        !row.name ||
-        !row.location
-      ){
-
-        message(
-          'zoneMessage',
-          'Please complete the required fields.',
-          'error'
-        );
-
-        return;
-      }
-
-
       message(
         'zoneMessage',
-        'Saving...'
+        'Saving zone...'
       );
 
 
@@ -2910,7 +3294,6 @@ if($('zoneForm')){
         original &&
         original !== row.name
       ){
-
 
         const {error:e1}=
           await sb
@@ -2951,9 +3334,7 @@ if($('zoneForm')){
           return;
         }
 
-
       }else{
-
 
         const {error}=
           await sb
@@ -2988,7 +3369,6 @@ if($('zoneForm')){
 
 
       resetZoneForm();
-
 
       await loadAdmin();
 
