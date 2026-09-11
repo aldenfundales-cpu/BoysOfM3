@@ -115,9 +115,19 @@ let auditLogs = [];
 
 let selectedZone = '';
 
+const recoveryParams =
+  new URLSearchParams(window.location.search);
+
+const directRecoveryTokenHash =
+  recoveryParams.get('token_hash') || '';
+
+const directRecoveryLink =
+  recoveryParams.get('type') === 'recovery' &&
+  Boolean(directRecoveryTokenHash);
+
 let passwordRecoveryMode =
   window.location.hash.includes('type=recovery') ||
-  new URLSearchParams(window.location.search).get('type') === 'recovery';
+  recoveryParams.get('recovery') === '1';
 
 
 /* =========================
@@ -3991,7 +4001,7 @@ if($('forgotPasswordBtn')){
 
 
       const redirectTo=
-        'https://aldenfundales-cpu.github.io/BoysOfM3/';
+        'https://aldenfundales-cpu.github.io/BoysOfM3/?recovery=1';
 
 
       const {error}=
@@ -5365,13 +5375,21 @@ if(
 
       if(event === 'PASSWORD_RECOVERY'){
 
+        passwordRecoveryMode=true;
+
+        window.history.replaceState(
+          {},
+          document.title,
+          `${window.location.pathname}?recovery=1#admin`
+        );
+
         showPasswordRecoveryPanel();
 
         return;
       }
 
 
-      if(passwordRecoveryMode){
+      if(passwordRecoveryMode || directRecoveryLink){
 
         return;
       }
@@ -5383,14 +5401,54 @@ if(
   );
 
 
-  if(passwordRecoveryMode){
+  if(directRecoveryLink){
+
+    const {error:recoveryError}=
+      await sb.auth.verifyOtp({
+        token_hash:directRecoveryTokenHash,
+        type:'recovery'
+      });
+
+    if(recoveryError){
+
+      passwordRecoveryMode=false;
+
+      window.history.replaceState(
+        {},
+        document.title,
+        `${window.location.pathname}#admin`
+      );
+
+      setLoggedOut();
+
+      message(
+        'loginMessage',
+        `Password reset link is invalid or expired: ${recoveryError.message}`,
+        'error'
+      );
+
+    }else{
+
+      passwordRecoveryMode=true;
+
+      window.history.replaceState(
+        {},
+        document.title,
+        `${window.location.pathname}?recovery=1#admin`
+      );
+
+      showPasswordRecoveryPanel();
+    }
+
+  }else if(passwordRecoveryMode){
+
     showPasswordRecoveryPanel();
   }
 
 
   await loadPublic();
 
-  if(!passwordRecoveryMode){
+  if(!passwordRecoveryMode && !directRecoveryLink){
     await checkAdmin();
   }
 
