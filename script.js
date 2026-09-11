@@ -113,6 +113,8 @@ let adminAssignments = [];
 let adminAccounts = [];
 let auditLogs = [];
 
+const ADMIN_MANAGER_FUNCTION = 'bom3-admin-manager';
+
 let selectedZone = '';
 
 const recoveryParams =
@@ -1261,6 +1263,366 @@ function hidePasswordPanels(){
 }
 
 
+
+/* =========================
+   ADMIN ACCOUNT MANAGEMENT
+========================= */
+
+function getSelectedAdminZoneIds(){
+
+  return Array.from(
+    document.querySelectorAll(
+      '#adminZoneChoices input[type="checkbox"]:checked'
+    )
+  ).map(input=>input.value);
+
+}
+
+
+function renderAdminZoneChoices(selectedZoneIds=[]){
+
+  const wrap=$('adminZoneChoices');
+  const help=$('adminZoneHelp');
+
+  if(!wrap) return;
+
+  const selected=
+    new Set(
+      (selectedZoneIds || []).map(String)
+    );
+
+  const role=
+    $('adminAccountRole')
+      ? $('adminAccountRole').value
+      : 'zone_admin';
+
+  const superRole=
+    role === 'super_admin';
+
+  wrap.innerHTML=
+    adminZones.length
+
+      ? adminZones.map(zone=>`
+
+          <label class="check">
+
+            <input
+              type="checkbox"
+              value="${esc(zone.zone_id)}"
+              ${selected.has(String(zone.zone_id)) ? 'checked' : ''}
+              ${superRole ? 'disabled' : ''}
+            >
+
+            ${esc(zone.name)}
+
+          </label>
+
+        `).join('')
+
+      : `<p class="muted">No zones available.</p>`;
+
+
+  if(help){
+
+    help.textContent=
+      superRole
+        ? 'Super Admins automatically have access to every zone.'
+        : 'Zone Admins must have at least one assigned zone.';
+
+  }
+}
+
+
+function resetAdminAccountForm(){
+
+  const form=$('adminAccountForm');
+
+  if(!form) return;
+
+  form.reset();
+
+  if($('adminAccountUserId')){
+    $('adminAccountUserId').value='';
+  }
+
+  if($('adminAccountEmail')){
+    $('adminAccountEmail').readOnly=false;
+  }
+
+  if($('adminAccountRole')){
+    $('adminAccountRole').value='zone_admin';
+  }
+
+  if($('adminAccountFormTitle')){
+    $('adminAccountFormTitle').textContent=
+      'Create / Invite Admin';
+  }
+
+  if($('adminAccountSubmit')){
+    $('adminAccountSubmit').textContent=
+      'Create & Send Setup Link';
+  }
+
+  if($('adminAccountCancel')){
+    $('adminAccountCancel').hidden=true;
+  }
+
+  renderAdminZoneChoices([]);
+
+  message(
+    'adminAccountMessage',
+    ''
+  );
+}
+
+
+async function invokeAdminManager(payload){
+
+  if(!sb){
+    throw new Error(
+      'Supabase is not connected.'
+    );
+  }
+
+  const {
+    data,
+    error
+  }=
+    await sb.functions.invoke(
+      ADMIN_MANAGER_FUNCTION,
+      {
+        body:payload
+      }
+    );
+
+
+  if(error){
+
+    let detail=
+      error.message ||
+      'The admin management request failed.';
+
+    try{
+
+      if(
+        error.context &&
+        typeof error.context.json === 'function'
+      ){
+
+        const body=
+          await error.context.json();
+
+        detail=
+          body?.error ||
+          body?.message ||
+          detail;
+      }
+
+    }catch(parseError){
+
+      console.warn(
+        'Could not parse Edge Function error response.',
+        parseError
+      );
+    }
+
+    throw new Error(detail);
+  }
+
+
+  if(!data || data.ok !== true){
+
+    throw new Error(
+      data?.error ||
+      data?.message ||
+      'The admin management request failed.'
+    );
+  }
+
+
+  return data;
+}
+
+
+function editAdminAccount(userId){
+
+  if(currentAdminRole !== 'super_admin'){
+    return;
+  }
+
+  const account=
+    adminAccounts.find(
+      a=>String(a.user_id)===String(userId)
+    );
+
+  if(!account) return;
+
+  const assigned=
+    adminAssignments
+      .filter(a=>
+        String(a.admin_user_id) ===
+        String(userId)
+      )
+      .map(a=>String(a.zone_id));
+
+
+  $('adminAccountUserId').value=
+    account.user_id;
+
+  $('adminAccountEmail').value=
+    account.email || '';
+
+  $('adminAccountEmail').readOnly=
+    true;
+
+  $('adminAccountRole').value=
+    account.role || 'zone_admin';
+
+  if($('adminAccountFormTitle')){
+    $('adminAccountFormTitle').textContent=
+      'Edit Admin Access';
+  }
+
+  if($('adminAccountSubmit')){
+    $('adminAccountSubmit').textContent=
+      'Save Admin Changes';
+  }
+
+  if($('adminAccountCancel')){
+    $('adminAccountCancel').hidden=false;
+  }
+
+  renderAdminZoneChoices(assigned);
+
+  message(
+    'adminAccountMessage',
+    ''
+  );
+
+  $('adminAccountForm').scrollIntoView({
+    behavior:'smooth',
+    block:'center'
+  });
+}
+
+
+async function sendAdminResetLink(userId){
+
+  if(currentAdminRole !== 'super_admin'){
+    return;
+  }
+
+  const account=
+    adminAccounts.find(
+      a=>String(a.user_id)===String(userId)
+    );
+
+  if(!account) return;
+
+  if(
+    !confirm(
+      `Send a password reset link to ${account.email}?`
+    )
+  ){
+    return;
+  }
+
+  message(
+    'adminAccountMessage',
+    `Sending password reset link to ${account.email}...`
+  );
+
+  try{
+
+    const result=
+      await invokeAdminManager({
+        action:'send_reset',
+        target_user_id:account.user_id
+      });
+
+    message(
+      'adminAccountMessage',
+      result.message ||
+      `Password reset link sent to ${account.email}.`,
+      'ok'
+    );
+
+    await loadAdmin();
+
+  }catch(error){
+
+    message(
+      'adminAccountMessage',
+      error.message,
+      'error'
+    );
+  }
+}
+
+
+async function removeAdminAccess(userId){
+
+  if(currentAdminRole !== 'super_admin'){
+    return;
+  }
+
+  const account=
+    adminAccounts.find(
+      a=>String(a.user_id)===String(userId)
+    );
+
+  if(!account) return;
+
+  if(
+    !confirm(
+      `Remove BOM3 administrator access from ${account.email}? Their Supabase Auth account will remain, but they will no longer be able to access the admin dashboard.`
+    )
+  ){
+    return;
+  }
+
+  message(
+    'adminAccountMessage',
+    `Removing administrator access from ${account.email}...`
+  );
+
+  try{
+
+    const result=
+      await invokeAdminManager({
+        action:'remove_admin',
+        target_user_id:account.user_id
+      });
+
+    if(
+      $('adminAccountUserId') &&
+      $('adminAccountUserId').value ===
+      account.user_id
+    ){
+      resetAdminAccountForm();
+    }
+
+    await loadAdmin();
+
+    message(
+      'adminAccountMessage',
+      result.message ||
+      `Administrator access removed from ${account.email}.`,
+      'ok'
+    );
+
+  }catch(error){
+
+    message(
+      'adminAccountMessage',
+      error.message,
+      'error'
+    );
+  }
+}
+
+
+
 /* =========================
    ADMIN AUTH
 ========================= */
@@ -1356,6 +1718,10 @@ function setLoggedOut(){
   resetMemberForm();
   resetZoneForm();
   resetEventForm();
+
+  if($('adminAccountForm')){
+    resetAdminAccountForm();
+  }
 
 
   if($('loginPanel')){
@@ -1661,7 +2027,7 @@ async function loadAdmin(){
       ? sb
           .from('audit_logs')
           .select(
-            'id,created_at,actor_email,action,entity_type,entity_id,zone_id'
+            'id,created_at,actor_email,action,entity_type,entity_id,zone_id,old_data,new_data'
           )
           .order(
             'created_at',
@@ -1816,6 +2182,14 @@ async function loadAdmin(){
 
 
   populateMemberZoneDropdown();
+
+  if(
+    isSuper &&
+    $('adminAccountForm') &&
+    !$('adminAccountUserId').value
+  ){
+    renderAdminZoneChoices([]);
+  }
 
   renderAdminLists();
 }
@@ -2388,6 +2762,10 @@ function renderAdminLists(){
                   })
                   .filter(Boolean);
 
+          const isSelf=
+            String(a.user_id) ===
+            String(currentAdminUserId);
+
 
           return `
 
@@ -2398,6 +2776,8 @@ function renderAdminLists(){
                 <strong>
                   ${esc(a.email || a.user_id)}
                 </strong>
+
+                ${isSelf ? '<span class="tag">YOU</span>' : ''}
 
                 <br>
 
@@ -2420,6 +2800,42 @@ function renderAdminLists(){
                   )}
 
                 </small>
+
+                <div class="admin-account-actions">
+
+                  <button
+                    type="button"
+                    class="ghost-btn"
+                    data-edit-admin="${esc(a.user_id)}"
+                  >
+                    Edit Access
+                  </button>
+
+                  <button
+                    type="button"
+                    class="ghost-btn"
+                    data-reset-admin="${esc(a.user_id)}"
+                  >
+                    Send Reset Link
+                  </button>
+
+                  ${
+                    isSelf
+
+                      ? ''
+
+                      : `
+                        <button
+                          type="button"
+                          class="danger small"
+                          data-remove-admin="${esc(a.user_id)}"
+                        >
+                          Remove Access
+                        </button>
+                      `
+                  }
+
+                </div>
 
               </div>
 
@@ -2469,6 +2885,109 @@ function renderAdminLists(){
               : 'Unknown';
 
 
+          const oldRole=
+            log.old_data &&
+            log.old_data.role
+              ? String(log.old_data.role)
+              : '';
+
+          const newRole=
+            log.new_data &&
+            log.new_data.role
+              ? String(log.new_data.role)
+              : '';
+
+          const oldZoneNames=
+            log.old_data &&
+            Array.isArray(log.old_data.zone_ids)
+              ? log.old_data.zone_ids
+                  .map(id=>{
+
+                    const oldZone=
+                      adminZones.find(z=>
+                        String(z.zone_id) ===
+                        String(id)
+                      );
+
+                    return oldZone
+                      ? oldZone.name
+                      : null;
+
+                  })
+                  .filter(Boolean)
+              : [];
+
+          const newZoneNames=
+            log.new_data &&
+            Array.isArray(log.new_data.zone_names)
+              ? log.new_data.zone_names
+              : (
+                  log.new_data &&
+                  Array.isArray(log.new_data.zone_ids)
+
+                    ? log.new_data.zone_ids
+                        .map(id=>{
+
+                          const newZone=
+                            adminZones.find(z=>
+                              String(z.zone_id) ===
+                              String(id)
+                            );
+
+                          return newZone
+                            ? newZone.name
+                            : null;
+
+                        })
+                        .filter(Boolean)
+
+                    : []
+                );
+
+          const detailParts=[];
+
+          if(oldRole || newRole){
+
+            detailParts.push(
+              oldRole && newRole && oldRole !== newRole
+                ? `Role: ${oldRole} → ${newRole}`
+                : `Role: ${newRole || oldRole}`
+            );
+          }
+
+          if(oldZoneNames.length || newZoneNames.length){
+
+            if(
+              oldZoneNames.join('|') !==
+              newZoneNames.join('|')
+            ){
+
+              detailParts.push(
+                `Zones: ${oldZoneNames.join(', ') || 'none'} → ${newZoneNames.join(', ') || 'none'}`
+              );
+
+            }else{
+
+              detailParts.push(
+                `Zones: ${newZoneNames.join(', ') || oldZoneNames.join(', ')}`
+              );
+            }
+          }
+
+          if(
+            log.new_data &&
+            log.new_data.source
+          ){
+
+            detailParts.push(
+              `Source: ${String(log.new_data.source).replace(/_/g,' ')}`
+            );
+          }
+
+          const auditDetails=
+            detailParts.join(' · ');
+
+
           return `
 
             <div class="admin-row">
@@ -2498,6 +3017,12 @@ function renderAdminLists(){
                   ${
                     zone
                       ? ` · ${iconSvg('pin')} ${esc(zone.name)}`
+                      : ''
+                  }
+
+                  ${
+                    auditDetails
+                      ? `<br>${esc(auditDetails)}`
                       : ''
                   }
 
@@ -2692,6 +3217,45 @@ function renderAdminLists(){
         b.onclick=()=>
           permanentlyDeleteMember(
             b.dataset.permanentDeleteMember
+          )
+    );
+
+
+  document
+    .querySelectorAll(
+      '[data-edit-admin]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          editAdminAccount(
+            b.dataset.editAdmin
+          )
+    );
+
+
+  document
+    .querySelectorAll(
+      '[data-reset-admin]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          sendAdminResetLink(
+            b.dataset.resetAdmin
+          )
+    );
+
+
+  document
+    .querySelectorAll(
+      '[data-remove-admin]'
+    )
+    .forEach(
+      b=>
+        b.onclick=()=>
+          removeAdminAccess(
+            b.dataset.removeAdmin
           )
     );
 
@@ -4208,6 +4772,26 @@ if($('changePasswordForm')){
         'ok'
       );
 
+
+      try{
+
+        await invokeAdminManager({
+          action:'log_password_change',
+          source:'change_my_password'
+        });
+
+        if(currentAdminRole === 'super_admin'){
+          await loadAdmin();
+        }
+
+      }catch(logError){
+
+        console.warn(
+          'Password was changed, but the activity log entry could not be written.',
+          logError
+        );
+      }
+
     };
 }
 
@@ -4276,6 +4860,22 @@ if($('resetPasswordForm')){
       }
 
 
+      try{
+
+        await invokeAdminManager({
+          action:'log_password_change',
+          source:'forgot_password_recovery'
+        });
+
+      }catch(logError){
+
+        console.warn(
+          'Password was reset, but the activity log entry could not be written.',
+          logError
+        );
+      }
+
+
       passwordRecoveryMode=false;
 
       await sb.auth.signOut();
@@ -4303,6 +4903,179 @@ if($('resetPasswordForm')){
 
     };
 }
+
+
+
+/* =========================
+   ADMIN ACCOUNT FORM
+========================= */
+
+if($('adminAccountRole')){
+
+  $('adminAccountRole').onchange=
+    ()=>{
+
+      const selected=
+        getSelectedAdminZoneIds();
+
+      renderAdminZoneChoices(
+        selected
+      );
+    };
+}
+
+
+if($('adminAccountCancel')){
+
+  $('adminAccountCancel').onclick=
+    ()=>resetAdminAccountForm();
+}
+
+
+if($('adminAccountForm')){
+
+  $('adminAccountForm').onsubmit=
+    async e=>{
+
+      e.preventDefault();
+
+      if(
+        !sb ||
+        currentAdminRole !== 'super_admin'
+      ){
+        return;
+      }
+
+      const userId=
+        $('adminAccountUserId').value.trim();
+
+      const email=
+        $('adminAccountEmail')
+          .value
+          .trim()
+          .toLowerCase();
+
+      const role=
+        $('adminAccountRole').value;
+
+      const zoneIds=
+        role === 'super_admin'
+          ? []
+          : getSelectedAdminZoneIds();
+
+
+      if(!email){
+
+        message(
+          'adminAccountMessage',
+          'Enter the administrator email address.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      if(
+        role === 'zone_admin' &&
+        !zoneIds.length
+      ){
+
+        message(
+          'adminAccountMessage',
+          'Select at least one assigned zone for this Zone Admin.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      if(
+        role === 'super_admin' &&
+        !confirm(
+          'Super Admin has nationwide access, Admin Accounts control, Activity Log access, Trash / Recovery access, and Event Management. Continue?'
+        )
+      ){
+
+        return;
+      }
+
+
+      const submitButton=
+        $('adminAccountSubmit');
+
+      if(submitButton){
+        submitButton.disabled=true;
+      }
+
+      message(
+        'adminAccountMessage',
+        userId
+          ? 'Saving administrator access...'
+          : 'Creating administrator and sending setup email...'
+      );
+
+
+      try{
+
+        const result=
+          await invokeAdminManager({
+
+            action:
+              userId
+                ? 'update_admin'
+                : 'create_admin',
+
+            target_user_id:
+              userId || null,
+
+            email,
+
+            role,
+
+            zone_ids:zoneIds
+
+          });
+
+
+        await loadAdmin();
+
+        resetAdminAccountForm();
+
+        message(
+          'adminAccountMessage',
+          result.message ||
+          (
+            userId
+              ? 'Administrator access updated.'
+              : 'Administrator created successfully.'
+          ),
+          result.warning
+            ? 'warn'
+            : 'ok'
+        );
+
+
+      }catch(error){
+
+        message(
+          'adminAccountMessage',
+          error.message,
+          'error'
+        );
+
+      }finally{
+
+        if(submitButton){
+          submitButton.disabled=false;
+        }
+
+      }
+
+    };
+}
+
 
 
 /* =========================
