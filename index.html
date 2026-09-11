@@ -10,9 +10,57 @@
 
     .admin-zone-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 10px;
-      margin: 12px 0;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 14px 0 4px;
+    }
+
+    .admin-zone-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 52px;
+      margin: 0;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 10px;
+      background: rgba(255,255,255,.025);
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    .admin-zone-option:hover {
+      border-color: rgba(255,255,255,.32);
+      background: rgba(255,255,255,.045);
+    }
+
+    .admin-zone-option:has(input:checked) {
+      border-color: rgba(255,255,255,.58);
+      background: rgba(255,255,255,.075);
+    }
+
+    .admin-zone-option input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 18px;
+      margin: 0;
+      accent-color: currentColor;
+    }
+
+    .admin-zone-name {
+      display: block;
+      min-width: 0;
+      line-height: 1.25;
+      white-space: normal;
+      overflow-wrap: normal;
+      word-break: normal;
+      font-weight: 600;
+    }
+
+    @media (max-width: 700px) {
+      .admin-zone-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     .admin-account-actions {
