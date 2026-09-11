@@ -3991,7 +3991,7 @@ if($('forgotPasswordBtn')){
 
 
       const redirectTo=
-        `${window.location.origin}${window.location.pathname}`;
+        'https://aldenfundales-cpu.github.io/BoysOfM3/';
 
 
       const {error}=
