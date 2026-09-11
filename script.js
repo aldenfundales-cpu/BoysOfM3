@@ -1204,6 +1204,24 @@ function resetEventForm(){
    PASSWORD UI HELPERS
 ========================= */
 
+function scrollPasswordRecoveryIntoView(){
+
+  const target=
+    $('resetPasswordPanel') || $('admin');
+
+  if(!target) return;
+
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      target.scrollIntoView({
+        behavior:'smooth',
+        block:'center'
+      });
+    });
+  });
+}
+
+
 function showPasswordRecoveryPanel(){
 
   passwordRecoveryMode=true;
@@ -1220,16 +1238,10 @@ function showPasswordRecoveryPanel(){
     $('resetPasswordPanel').hidden=false;
   }
 
-  const adminSection=$('admin');
-
-  if(adminSection){
-    setTimeout(()=>{
-      adminSection.scrollIntoView({
-        behavior:'smooth',
-        block:'start'
-      });
-    },0);
-  }
+  // Public sections above Admin can still be loading and changing height.
+  // Scroll once now, then again after layout has settled.
+  scrollPasswordRecoveryIntoView();
+  setTimeout(scrollPasswordRecoveryIntoView,250);
 }
 
 
@@ -5447,6 +5459,12 @@ if(
 
 
   await loadPublic();
+
+  // loadPublic() fills sections above Admin and can push the recovery form down.
+  // Re-apply recovery mode only after those sections finish rendering.
+  if(passwordRecoveryMode){
+    showPasswordRecoveryPanel();
+  }
 
   if(!passwordRecoveryMode && !directRecoveryLink){
     await checkAdmin();
