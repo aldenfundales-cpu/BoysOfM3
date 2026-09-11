@@ -1304,7 +1304,7 @@ function renderAdminZoneChoices(selectedZoneIds=[]){
 
       ? adminZones.map(zone=>`
 
-          <label class="check">
+          <label class="admin-zone-option">
 
             <input
               type="checkbox"
@@ -1313,7 +1313,9 @@ function renderAdminZoneChoices(selectedZoneIds=[]){
               ${superRole ? 'disabled' : ''}
             >
 
-            ${esc(zone.name)}
+            <span class="admin-zone-name">
+              ${esc(zone.name)}
+            </span>
 
           </label>
 
