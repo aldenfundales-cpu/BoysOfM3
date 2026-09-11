@@ -7,6 +7,24 @@
   <link rel="stylesheet" href="style.css">
   <style>
     [hidden] { display: none !important; }
+
+    .admin-zone-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .admin-account-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .admin-account-note {
+      margin: 8px 0 0;
+    }
   </style>
 </head>
 
@@ -1040,12 +1058,106 @@
       </h3>
 
       <p class="muted">
-        View administrator roles and their assigned zones.
+        Create administrators, assign one or multiple zones,
+        change roles, send password setup/reset links,
+        or remove administrator access.
       </p>
 
     </div>
 
   </div>
+
+
+  <form
+    id="adminAccountForm"
+    class="panel"
+  >
+
+    <input
+      type="hidden"
+      id="adminAccountUserId"
+    >
+
+    <h3 id="adminAccountFormTitle">
+      Create / Invite Admin
+    </h3>
+
+    <p class="muted">
+      New administrators receive a secure password setup link by email.
+      Passwords are never stored in the BOM3 database.
+    </p>
+
+    <input
+      id="adminAccountEmail"
+      type="email"
+      placeholder="Administrator email"
+      autocomplete="off"
+      required
+    >
+
+    <label for="adminAccountRole">
+      Administrator Role
+    </label>
+
+    <select
+      id="adminAccountRole"
+      required
+    >
+      <option value="zone_admin">
+        Zone Admin
+      </option>
+
+      <option value="super_admin">
+        Super Admin
+      </option>
+    </select>
+
+    <div>
+      <strong>
+        Assigned Zones
+      </strong>
+
+      <p
+        id="adminZoneHelp"
+        class="muted admin-account-note"
+      >
+        Zone Admins must have at least one assigned zone.
+      </p>
+
+      <div
+        id="adminZoneChoices"
+        class="admin-zone-grid"
+      ></div>
+    </div>
+
+    <div class="form-actions">
+
+      <button
+        class="btn"
+        id="adminAccountSubmit"
+        type="submit"
+      >
+        Create &amp; Send Setup Link
+      </button>
+
+      <button
+        type="button"
+        class="ghost-btn"
+        id="adminAccountCancel"
+        hidden
+      >
+        Cancel Edit
+      </button>
+
+    </div>
+
+    <p
+      id="adminAccountMessage"
+      class="form-message"
+      aria-live="polite"
+    ></p>
+
+  </form>
 
 
   <div id="adminAccountList">
